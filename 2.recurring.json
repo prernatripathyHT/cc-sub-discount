@@ -1,0 +1,106 @@
+{
+    "charge": {
+        "address_id": 167782840,
+        "analytics_data": {
+            "utm_params": []
+        },
+        "billing_address": {
+            "address1": "11652 Idaho Avenue, Apt 10, Apt 10",
+            "address2": "Apt 10",
+            "city": "Los Angeles",
+            "company": null,
+            "country": "United States",
+            "first_name": "Prerna",
+            "last_name": "Tripathy",
+            "phone": null,
+            "province": "California",
+            "zip": "90025"
+        },
+        "client_details": {
+            "browser_ip": null,
+            "user_agent": null
+        },
+        "created_at": "2024-06-23T16:03:45",
+        "currency": "USD",
+        "customer_hash": "685b6eb0c345e2995a3e7bbf178f9d",
+        "customer_id": 153504053,
+        "discount_codes": [],
+        "email": "prerna@houndstoothsc.com",
+        "first_name": "Prerna",
+        "has_uncommited_changes": false,
+        "id": 1112324151,
+        "last_name": "Test",
+        "line_items": [
+            {
+                "grams": 400,
+                "images": {
+                    "large": "https://cdn.shopify.com/s/files/1/0565/2453/7907/products/CCC_ADENISA_12oz_2023_large.png?v=1707127453",
+                    "medium": "https://cdn.shopify.com/s/files/1/0565/2453/7907/products/CCC_ADENISA_12oz_2023_medium.png?v=1707127453",
+                    "original": "https://cdn.shopify.com/s/files/1/0565/2453/7907/products/CCC_ADENISA_12oz_2023.png?v=1707127453",
+                    "small": "https://cdn.shopify.com/s/files/1/0565/2453/7907/products/CCC_ADENISA_12oz_2023_small.png?v=1707127453"
+                },
+                "line_item_id": 1,
+                "original_price": "22.00",
+                "price": "22.00",
+                "properties": [],
+                "quantity": 1,
+                "shopify_product_id": "7046600589363",
+                "shopify_variant_id": "41696841891891",
+                "sku": "ADENISO-BG",
+                "subscription_id": 503147534,
+                "tax_lines": [],
+                "title": "ADENISA",
+                "type": "SUBSCRIPTION",
+                "variant_title": "12 oz",
+                "vendor": "Counter Culture Coffee - Retail"
+            }
+        ],
+        "merged_at": null,
+        "note": "",
+        "note_attributes": [],
+        "processor_name": "shopify_payments",
+        "requires_shipping": true,
+        "scheduled_at": "2024-06-25T00:00:00",
+        "shipments_count": null,
+        "shipping_address": {
+            "address1": "11652 Idaho Avenue, Apt 10, Apt 10",
+            "address2": "Apt 10",
+            "city": "Los Angeles",
+            "company": "",
+            "country": "United States",
+            "first_name": "Prerna",
+            "last_name": "Tripathy",
+            "phone": "",
+            "province": "California",
+            "zip": "90025"
+        },
+        "shipping_lines": [
+            {
+                "code": "pending",
+                "description": null,
+                "price": 0.0,
+                "retrieved_at": "2024-06-23T16:03:45.316929",
+                "source": "recharge",
+                "status": "pending",
+                "tax_lines": [],
+                "title": "Pending"
+            }
+        ],
+        "shopify_order_id": null,
+        "status": "QUEUED",
+        "sub_total": null,
+        "subtotal_price": "22.0",
+        "tags": "Subscription, Subscription Recurring Order",
+        "tax_lines": 0.0,
+        "total_discounts": "0.00",
+        "total_duties": 0.0,
+        "total_line_items_price": "22.00",
+        "total_price": "22.00",
+        "total_refunds": null,
+        "total_tax": 0.0,
+        "total_weight": 400.0,
+        "transaction_id": null,
+        "type": "RECURRING",
+        "updated_at": "2024-06-23T16:03:45"
+    }
+}

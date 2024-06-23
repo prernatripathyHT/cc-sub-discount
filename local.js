@@ -7,8 +7,8 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 const RECHARGE_API_KEY = 'sk_test_2x2_b69d7aa3fe6f2600f0375946b77f8eb00dd2bf034133a9bd9702efd3bb2b3400'
-const MONGO_COLLECTION = 'webhook_payloads'
-// const MONGO_COLLECTION = 'webhooks'
+// const MONGO_COLLECTION = 'webhook_payloads'
+const MONGO_COLLECTION = 'webhooks'
 
 // MongoDB connection setup
 const connectDB = async () => {
@@ -132,16 +132,13 @@ app.post('/webhook', async (req, res) => {
                 redirect: "follow"
                 };
     
-                // fetch(`https://api.rechargeapps.com/charges/${charge_id}/apply_discount`, discountReqOptions)
-                // .then((response) => response.text())
-                // .then((result) => {
-                //     console.log(`Discount code ${SUB_DISCOUNT_CODE} applied for the number ${count + 1} charge with ID ${charge_id}`)
-                //     //console.log(result)
-                //     })
-                // .catch((error) => console.error(error));
-
-
-
+                fetch(`https://api.rechargeapps.com/charges/${charge_id}/apply_discount`, discountReqOptions)
+                .then((response) => response.text())
+                .then((result) => {
+                    console.log(`Discount code ${SUB_DISCOUNT_CODE} applied for the number ${count + 1} charge with ID ${charge_id}`)
+                    //console.log(result)
+                    })
+                .catch((error) => console.error(error));
             })
             .catch((error) => console.error(error));
 

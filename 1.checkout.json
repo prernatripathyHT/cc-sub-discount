@@ -1,0 +1,122 @@
+{
+    "charge": {
+        "address_id": 167782840,
+        "analytics_data": {
+            "utm_params": []
+        },
+        "billing_address": {
+            "address1": "11652 Idaho Avenue, Apt 10, Apt 10",
+            "address2": "Apt 10",
+            "city": "Los Angeles",
+            "company": null,
+            "country": "United States",
+            "first_name": "Prerna",
+            "last_name": "Tripathy",
+            "phone": null,
+            "province": "California",
+            "zip": "90025"
+        },
+        "client_details": {
+            "browser_ip": "2401:4900:1cb8:4b43:e4ed:f4de:6bbf:3121",
+            "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
+        },
+        "created_at": "2024-06-23T16:03:45",
+        "currency": "USD",
+        "customer_hash": "685b6eb0c345e2995a3e7bbf178f9d",
+        "customer_id": 153504053,
+        "discount_codes": [
+            {
+                "amount": 2.2,
+                "code": "TIERED_SUB_5",
+                "recharge_discount_id": 211680095,
+                "type": "fixed_amount"
+            }
+        ],
+        "email": "prerna@houndstoothsc.com",
+        "first_name": "Prerna",
+        "has_uncommited_changes": false,
+        "id": 1112324153,
+        "last_name": "Tripathy",
+        "line_items": [
+            {
+                "images": {
+                    "large": "https://cdn.shopify.com/s/files/1/0565/2453/7907/products/CCC_ADENISA_12oz_2023_large.png?v=1707127453",
+                    "medium": "https://cdn.shopify.com/s/files/1/0565/2453/7907/products/CCC_ADENISA_12oz_2023_medium.png?v=1707127453",
+                    "original": "https://cdn.shopify.com/s/files/1/0565/2453/7907/products/CCC_ADENISA_12oz_2023.png?v=1707127453",
+                    "small": "https://cdn.shopify.com/s/files/1/0565/2453/7907/products/CCC_ADENISA_12oz_2023_small.png?v=1707127453"
+                },
+                "line_item_id": 1,
+                "original_price": "22.0",
+                "price": "22.0",
+                "properties": [],
+                "quantity": 1,
+                "shopify_product_id": 7046600589363,
+                "shopify_variant_id": 41696841891891,
+                "sku": "ADENISO-BG",
+                "subscription_id": 503147534,
+                "tax_lines": [],
+                "title": "ADENISA",
+                "type": "SUBSCRIPTION",
+                "variant_title": "12 oz"
+            }
+        ],
+        "merged_at": null,
+        "note": null,
+        "note_attributes": [],
+        "processed_at": "2024-06-23T16:03:38",
+        "processor_name": "shopify_payments",
+        "requires_shipping": true,
+        "scheduled_at": "2024-06-23T00:00:00",
+        "shipments_count": 1,
+        "shipping_address": {
+            "address1": "11652 Idaho Avenue, Apt 10, Apt 10",
+            "address2": "Apt 10",
+            "city": "Los Angeles",
+            "company": null,
+            "country": "United States",
+            "first_name": "Prerna",
+            "last_name": "Tripathy",
+            "phone": "",
+            "province": "California",
+            "zip": "90025"
+        },
+        "shipping_lines": [
+            {
+                "code": "Economy",
+                "description": "",
+                "price": "0.00",
+                "retrieved_at": null,
+                "source": "shopify",
+                "status": "active",
+                "tax_lines": [],
+                "title": "Economy"
+            },
+            {
+                "code": "Economy",
+                "description": "",
+                "price": "0.00",
+                "retrieved_at": null,
+                "source": "shopify",
+                "status": "active",
+                "tax_lines": [],
+                "title": "Economy"
+            }
+        ],
+        "shopify_order_id": "5174296739891",
+        "status": "SUCCESS",
+        "sub_total": null,
+        "subtotal_price": "19.8",
+        "tags": "",
+        "tax_lines": 0.0,
+        "total_discounts": 2.2,
+        "total_duties": 0.0,
+        "total_line_items_price": 22.0,
+        "total_price": "19.80",
+        "total_refunds": null,
+        "total_tax": 0.0,
+        "total_weight": 399,
+        "transaction_id": "Shopify Checkout",
+        "type": "CHECKOUT",
+        "updated_at": "2024-06-23T16:03:45"
+    }
+}
