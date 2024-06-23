@@ -12,7 +12,7 @@ const MONGO_COLLECTION = 'webhook_payloads'
 // MongoDB connection setup
 const connectDB = async () => {
   try {
-    await mongoose.connect(process.env.MONGO_URI, {
+    await mongoose.connect('mongodb+srv://prerna_trip:WlFtsjAxFDscXPT7@cc-sub-discount.ebgalzu.mongodb.net/counter-culture' , {
       useNewUrlParser: true,
       useUnifiedTopology: true,
     });
