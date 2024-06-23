@@ -7,6 +7,11 @@ const PORT = process.env.PORT || 3000;
 
 app.use(bodyParser.json());
 
+// Root route handler
+app.get('/', (req, res) => {
+    res.send('Welcome to the webhook server!');
+});
+
 app.post('/webhook', async (req, res) => {
     console.log('========= *** =========');
     console.log('Received webhook:', req.body);
