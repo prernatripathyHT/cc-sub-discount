@@ -1,65 +1,89 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const fs = require('fs-extra'); // Import the fs-extra module
+const { MongoClient } = require('mongodb');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(bodyParser.json());
 
-// Root route handler
-app.get('/', (req, res) => {
-    res.send('Welcome to the webhook server!');
+// MongoDB Connection URI and Database Name
+const uri = 'mongodb+srv://prerna_trip:WlFtsjAxFDscXPT7@cc-sub-discount.ebgalzu.mongodb.net/';
+const dbName = 'counter-culture'; // Replace with your database name
+
+// MongoDB Client instance
+const client = new MongoClient(uri, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
 });
 
-app.post('/webhook', async (req, res) => {
-    console.log('========= *** =========');
-    console.log('Received webhook:', req.body);
+// Connect to MongoDB Atlas
+async function connectToMongoDB() {
+  try {
+    await client.connect();
+    console.log('Connected to MongoDB Atlas');
+  } catch (err) {
+    console.error('Error connecting to MongoDB Atlas:', err);
+  }
+}
 
-    // Get the subscription_id and charge_id value
+// Root route handler
+app.get('/', (req, res) => {
+  res.send('Welcome to the webhook server!');
+});
+
+// Webhook route handler
+app.post('/webhook', async (req, res) => {
+  console.log('========= *** =========');
+  console.log('Received webhook:', req.body);
+
+  // Example: Inserting data into MongoDB
+  try {
+    // Ensure the database connection is established
+    if (!client.isConnected()) {
+      await connectToMongoDB();
+    }
+
+    // Use the specified database
+    const database = client.db(dbName);
+
+    // Example: Inserting webhook data into a collection named 'webhooks'
+    const collection = database.collection('webhooks');
+
+    // Insert the received webhook data into MongoDB
+    const result = await collection.insertOne(req.body);
+    console.log(`Inserted ${result.insertedCount} document into the collection`);
+
+    // Optionally, perform additional operations based on the webhook data
     let subscription_id = req.body.charge.line_items[0].subscription_id;
     let charge_id = req.body.charge.id;
 
     console.table({
-        "subscription_id": subscription_id,
-        "charge_id": charge_id
+      "subscription_id": subscription_id,
+      "charge_id": charge_id
     });
 
-    //1. After the webhook details is received, check if the discount code 'TIERED_SUB_5' is used.
-    //2. if yes, get the subscription_id and charge_id. Maybe need to add some tags to the customer?
-    //3. Check how many charges have already occured
-    //4. Apply the subsequent discount based on that    
-
-
-    // console.log(req.body.charge.discount_codes[0].code)
-
-    if(req.body.charge.discount_codes[0].code === 'TIERED_SUB_5' ){
-        console.log('This customer qualifies for Tiered discount')
+    if (req.body.charge.discount_codes[0].code === 'TIERED_SUB_5') {
+      console.log('This customer qualifies for Tiered discount');
+      // Add logic to apply discounts, update customer tags, etc.
     }
 
-    try {
-        // Read existing data from charge-data.json
-        let chargeData = [];
-        if (await fs.pathExists('charge-data.json')) {
-            const data = await fs.readJson('charge-data.json');
-            chargeData = Array.isArray(data) ? data : [];
-        }
-
-        // Add new entry to the charge data
-        chargeData.push({ subscription_id, charge_id });
-
-        // Write updated data back to charge-data.json
-        await fs.writeJson('charge-data.json', chargeData, { spaces: 2 });
-
-        res.sendStatus(200);
-    } catch (err) {
-        console.error('Error handling charge-data.json:', err);
-        if (!res.headersSent) {
-            res.sendStatus(500);
-        }
-    }
+    res.sendStatus(200); // Respond to the webhook request
+  } catch (err) {
+    console.error('Error handling webhook:', err);
+    res.sendStatus(500); // Respond with an error status
+  }
 });
 
+// Start the server
 app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+  console.log(`Server is running on port ${PORT}`);
+  connectToMongoDB(); // Connect to MongoDB when the server starts
+});
+
+// Handle process termination gracefully
+process.on('SIGINT', async () => {
+  await client.close();
+  console.log('MongoDB Atlas connection closed');
+  process.exit(0);
 });
