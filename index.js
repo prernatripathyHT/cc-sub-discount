@@ -108,117 +108,126 @@ app.post('/webhook', async (req, res) => {
       let charge_id = req.body.charge.id;
 
 
-      //1. Check the properties of the subscription and see if it qualifies for a discount
-      const subPropertyHeaders = new Headers();
-      subPropertyHeaders.append("X-Recharge-Access-Token", RECHARGE_API_KEY);
+      //Add a delay of 1000ms before processing the RECURRING request
+      setTimeout(() => {
+        
+      console.log('After 1000ms delay, process the RECURRING request')
 
-      const requestOptions = {
-        method: "GET",
-        headers: subPropertyHeaders
-      };
+        //1. Check the properties of the subscription and see if it qualifies for a discount
+        const subPropertyHeaders = new Headers();
+        subPropertyHeaders.append("X-Recharge-Access-Token", RECHARGE_API_KEY);
 
-      fetch(`https://api.rechargeapps.com/subscriptions/${subscription_id}`, requestOptions)
-        .then((response) => response.json())
-        .then((result) => {
-          const subscription = result.subscription;
-          if (subscription) {
-            const property = subscription.properties.find(prop => prop.name === 'qualifies for tiered discount');
-            if (property) {
-              console.log("Property found: 'qualifies for tiered discount':", property.value);
+        const requestOptions = {
+          method: "GET",
+          headers: subPropertyHeaders
+        };
 
-              if(property.value == true){
-                console.log('---** This RECURRING ORDER qualifies for discount **---')
+        fetch(`https://api.rechargeapps.com/subscriptions/${subscription_id}`, requestOptions)
+          .then((response) => response.json())
+          .then((result) => {
+            const subscription = result.subscription;
+            if (subscription) {
+              const property = subscription.properties.find(prop => prop.name === 'qualifies for tiered discount');
+              if (property) {
+                console.log("Property found: 'qualifies for tiered discount':", property.value);
 
-
-                //3. Check how many charges have already occured
-                const chargeCountHeaders = new Headers();
-                chargeCountHeaders.append("X-Recharge-Access-Token", RECHARGE_API_KEY);
-
-                const requestOptions = {
-                method: "GET",
-                headers: chargeCountHeaders
-                };
-
-                console.log('====== *** ======')
-                console.log('Making a request to check the charge count...')
-
-                fetch(`https://api.rechargeapps.com/charges/count?subscription_id=${subscription_id}`, requestOptions)
-                .then((response) => response.json())
-                .then((result) => {
-                    const count = result.count;
-                    console.log('Charge Count for this subscription so far is...', count)
+                if(property.value == true){
+                  console.log('---** This RECURRING ORDER qualifies for discount **---')
 
 
+                  //3. Check how many charges have already occured
+                  const chargeCountHeaders = new Headers();
+                  chargeCountHeaders.append("X-Recharge-Access-Token", RECHARGE_API_KEY);
 
-                    console.log('====== *** ======')
-                    console.log('Applying the discount code ...')
+                  const requestOptions = {
+                  method: "GET",
+                  headers: chargeCountHeaders
+                  };
 
-                   
+                  console.log('====== *** ======')
+                  console.log('Making a request to check the charge count...')
+
+                  fetch(`https://api.rechargeapps.com/charges/count?subscription_id=${subscription_id}`, requestOptions)
+                  .then((response) => response.json())
+                  .then((result) => {
+                      const count = result.count;
+                      console.log('Charge Count for this subscription so far is...', count)
+
+
+
+                      console.log('====== *** ======')
+                      console.log('Applying the discount code ...')
+
                     
+                      
 
 
-                    //4. Apply the subsequent discount based on the count
-                    let SUB_DISCOUNT_CODE = ''
-                    switch (count) {
-                        case 2:
-                        console.log('Count is 2');
-                        SUB_DISCOUNT_CODE = 'CHARGE_OFF_20'
-                        break;
-                        case 3:
-                        console.log('Count is 3');
-                        SUB_DISCOUNT_CODE = 'CHARGE_OFF_30'
-                        break;
-                        case 4:
-                        console.log('Count is 4');
-                        SUB_DISCOUNT_CODE = 'CHARGE_OFF_40'
-                        break;
-                        case 5:
-                        console.log('Count is 5');
-                        SUB_DISCOUNT_CODE = 'CHARGE_OFF_50'
-                        break;
-                        default:
-                        console.log('Count is out of range');
-                    }
-
-
-
-
-
-                    const discountHeader = new Headers();
-                    discountHeader.append("X-Recharge-Access-Token", RECHARGE_API_KEY);
-                    discountHeader.append("Content-Type", "application/json");
-        
-                    const raw = JSON.stringify({
-                      "discount_code": SUB_DISCOUNT_CODE
-                    });
-        
-                    const discountReqOptions = {
-                    method: "POST",
-                    headers: discountHeader,
-                    body: raw
-                    };
-        
-                    fetch(`https://api.rechargeapps.com/charges/${charge_id}/apply_discount`, discountReqOptions)
-                    .then((response) => response.text())
-                    .then((result) => {
-                        console.log(`Discount code ${SUB_DISCOUNT_CODE} applied for the charge number ${count} with ID ${charge_id}`)
-                        //console.log(result)
-                        })
-                    .catch((error) => console.error(error));
-                })
-                .catch((error) => console.error(error));
+                      //4. Apply the subsequent discount based on the count
+                      let SUB_DISCOUNT_CODE = ''
+                      switch (count) {
+                          case 2:
+                          console.log('Count is 2');
+                          SUB_DISCOUNT_CODE = 'CHARGE_OFF_20'
+                          break;
+                          case 3:
+                          console.log('Count is 3');
+                          SUB_DISCOUNT_CODE = 'CHARGE_OFF_30'
+                          break;
+                          case 4:
+                          console.log('Count is 4');
+                          SUB_DISCOUNT_CODE = 'CHARGE_OFF_40'
+                          break;
+                          case 5:
+                          console.log('Count is 5');
+                          SUB_DISCOUNT_CODE = 'CHARGE_OFF_50'
+                          break;
+                          default:
+                          console.log('Count is out of range');
+                      }
 
 
 
 
+
+                      const discountHeader = new Headers();
+                      discountHeader.append("X-Recharge-Access-Token", RECHARGE_API_KEY);
+                      discountHeader.append("Content-Type", "application/json");
+          
+                      const raw = JSON.stringify({
+                        "discount_code": SUB_DISCOUNT_CODE
+                      });
+          
+                      const discountReqOptions = {
+                      method: "POST",
+                      headers: discountHeader,
+                      body: raw
+                      };
+          
+                      fetch(`https://api.rechargeapps.com/charges/${charge_id}/apply_discount`, discountReqOptions)
+                      .then((response) => response.text())
+                      .then((result) => {
+                          console.log(`Discount code ${SUB_DISCOUNT_CODE} applied for the charge number ${count} with ID ${charge_id}`)
+                          //console.log(result)
+                          })
+                      .catch((error) => console.error(error));
+                  })
+                  .catch((error) => console.error(error));
+
+
+
+
+                }
+              } else {
+                console.log("Property not found: 'qualifies for tiered discount '", "this RECURRING ORDER does not qualify for discount");
               }
-            } else {
-              console.log("Property not found: 'qualifies for tiered discount '", "this RECURRING ORDER does not qualify for discount");
             }
-          }
 
-        })
-        .catch((error) => console.error(error));
+          })
+          .catch((error) => console.error(error));
+
+      }, 1000); 
+
+
 
     }
 
