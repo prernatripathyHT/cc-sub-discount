@@ -7,8 +7,8 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 const RECHARGE_API_KEY = 'sk_test_2x2_b69d7aa3fe6f2600f0375946b77f8eb00dd2bf034133a9bd9702efd3bb2b3400'
-// const MONGO_COLLECTION = 'webhook_payloads'
-const MONGO_COLLECTION = 'webhooks'
+const MONGO_COLLECTION = 'webhook_payloads'
+// const MONGO_COLLECTION = 'webhooks'
 
 // MongoDB connection setup
 const connectDB = async () => {
@@ -34,12 +34,6 @@ app.use(bodyParser.json());
 app.get('/', (req, res) => {
   res.send('Welcome to the webhook server!');
 });
-
-
-// Webhook - subscription/created
-
-
-
 
 // Webhook route handler
 app.post('/webhook', async (req, res) => {
@@ -117,7 +111,7 @@ app.post('/webhook', async (req, res) => {
       //Add a delay of 1000ms before processing the RECURRING request
       setTimeout(() => {
         
-      console.log('After 1000ms delay, process the RECURRING request')
+        console.log('After 1000ms delay, process the RECURRING request')
 
         //1. Check the properties of the subscription and see if it qualifies for a discount
         const subPropertyHeaders = new Headers();
