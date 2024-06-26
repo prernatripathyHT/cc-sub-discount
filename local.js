@@ -36,6 +36,7 @@ app.get('/', (req, res) => {
 });
 
 
+
 // Webhook - subscription/created
 app.post('/subscription', async (req, res) => {
   console.log('========= *** =========');
@@ -43,214 +44,164 @@ app.post('/subscription', async (req, res) => {
   console.log('========= *** =========');
 
   try {
-      // Save the payload to MongoDB
-      const savedPayload = await mongoose.connection.db.collection(`${MONGO_COLLECTION}`).insertOne(req.body);
-      console.log('Webhook payload saved:', savedPayload);
-
-      res.sendStatus(200); // Respond to the webhook request
+    // Save the payload to MongoDB
+    const savedPayload = await mongoose.connection.db.collection(`${MONGO_COLLECTION}`).insertOne(req.body);
+    console.log('Webhook payload saved:', savedPayload);
+    res.sendStatus(200); // Respond to the webhook request
   } catch (err) {
-      console.error('Error saving webhook payload:', err);
-      res.sendStatus(500); // Respond with an error status
+    console.error('Error saving webhook payload:', err);
+    res.sendStatus(500); // Respond with an error status
   }
-
 
   let subscription_id = req.body.subscription.id;
   let product_title = req.body.subscription.product_title;
   console.table({
-      "subscription_id": subscription_id,
-      "product": product_title
+    "subscription_id": subscription_id,
+    "product": product_title
   });
-  console.log('Subscription ID for product ', product_title , 'is ===>', subscription_id)
+  console.log('Subscription ID for product ', product_title , 'is ===>', subscription_id);
 
+  try {
+    // Get all charges for this subscription ID
+    const chargeHeaders = new Headers();
+    chargeHeaders.append("X-Recharge-Access-Token", RECHARGE_API_KEY);
 
-  //Get all charges for this subcription ID
-  const chargeHeaders = new Headers();
-  chargeHeaders.append("X-Recharge-Access-Token", RECHARGE_API_KEY);
+    const requestOptions = {
+      method: "GET",
+      headers: chargeHeaders
+    };
 
-  const requestOptions = {
-    method: "GET",
-    headers: chargeHeaders
-  };
+    const response = await fetch(`https://api.rechargeapps.com/charges?subscription_id=${subscription_id}`, requestOptions);
+    const chargeRes = await response.json();
 
-  fetch(`https://api.rechargeapps.com/charges?subscription_id=${subscription_id}`, requestOptions)
-    .then((response) => response.json())
-    .then((chargeRes) => {
-      console.log('****** RETRIEVED CHARGES FOR THE SUBSCRIPTION ******')
-      //console.log(chargeRes)
+    console.log('****** RETRIEVED CHARGES FOR THE SUBSCRIPTION ******');
+    console.log(chargeRes);
 
+    // Sort the charges to ensure CHECKOUT comes first
+    chargeRes.charges.sort((a, b) => {
+      if (a.type === 'CHECKOUT' && b.type !== 'CHECKOUT') {
+        return -1;
+      }
+      if (a.type !== 'CHECKOUT' && b.type === 'CHECKOUT') {
+        return 1;
+      }
+      return 0;
+    });
 
-      // Sort the charges to ensure CHECKOUT comes first
-      chargeRes.charges.sort((a, b) => {
-        if (a.type === 'CHECKOUT' && b.type !== 'CHECKOUT') {
-          return -1;
-        }
-        if (a.type !== 'CHECKOUT' && b.type === 'CHECKOUT') {
-          return 1;
-        }
-        return 0;
-      });
+    for (const charge of chargeRes.charges) {
+      if (charge.type === 'CHECKOUT') {
+        console.log('----- This charge is of type CHECKOUT (subscription/created) -----');
 
+        if (charge.discount_codes.length > 0 && charge.discount_codes[0].code === 'TIERED_SUB_5') {
+          console.log('------- This charge qualifies for TIERED DISCOUNT ------');
+          console.log('adding properties to subscription object...');
 
-      // console.log('chargeRes after  ==> ',chargeRes)
-      //Check each Charge details
-      chargeRes.charges.forEach(charge => {
+          let subscription_id = charge.line_items[0].subscription_id;
+          let charge_id = charge.id;
 
-          if(charge.type === 'CHECKOUT'){
-            console.log('----- This charge is of type CHECKOUT (subscription/created) -----')
+          console.table({
+            "subscription_id": subscription_id,
+            "charge_id": charge_id
+          });
 
+          const subscriptionHeaders = new Headers();
+          subscriptionHeaders.append("X-Recharge-Access-Token", RECHARGE_API_KEY);
+          subscriptionHeaders.append("Content-Type", "application/json");
 
-            //1. After the webhook details is received, check if the discount code 'TIERED_SUB_5' is used.
-            if(charge.discount_codes.length > 0){
-              if(charge.discount_codes[0].code === 'TIERED_SUB_5' ){
-                console.log('------- This charge qualifies for TIERED DISCOUNT ------');
-                console.log('adding properties to subscription object...');
-
-                //2. if yes, get the subscription_id and charge_id.
-                let subscription_id = charge.line_items[0].subscription_id;
-                let charge_id = charge.id;
-      
-                console.table({
-                    "subscription_id": subscription_id,
-                    "charge_id": charge_id
-                });
-
-
-                //3. Add the properties to the subscription 
-                const subscriptionHeaders = new Headers();
-                subscriptionHeaders.append("X-Recharge-Access-Token", RECHARGE_API_KEY);
-                subscriptionHeaders.append("Content-Type", "application/json");
-
-                const raw = JSON.stringify({
-                  "properties": [
-                    {
-                      "name": "qualifies for tiered discount",
-                      "value": true
-                    }
-                  ]
-                });
-
-                const requestOptions = {
-                  method: "PUT",
-                  headers: subscriptionHeaders,
-                  body: raw
-                };
-
-                fetch(`https://api.rechargeapps.com/subscriptions/${subscription_id}`, requestOptions)
-                  .then((response) => response.text())
-                  .then((result) => {
-                    console.log('added properties to the subscription object (sub): ', result)
-
-                  })
-                  .catch((error) => console.error(error));
-
+          const raw = JSON.stringify({
+            "properties": [
+              {
+                "name": "qualifies for tiered discount",
+                "value": true
               }
-            } 
-          }
-          else if(charge.type === 'RECURRING'){
-            console.log('----- This charge is of type RECURRING (subscription/created) -----');
+            ]
+          });
 
+          const requestOptions = {
+            method: "PUT",
+            headers: subscriptionHeaders,
+            body: raw
+          };
 
+          await fetch(`https://api.rechargeapps.com/subscriptions/${subscription_id}`, requestOptions);
+          console.log('Added properties to the subscription object');
+        }
+      }
+    }
 
-            let subscription_id = charge.line_items[0].subscription_id;
-            let charge_id = charge.id;
+    // Processing of CHECKOUT charges is complete. Now starting to process RECURRING charges.
+    console.log('----- Processing of CHECKOUT charges is complete. Starting to process RECURRING charges -----');
 
+    for (const charge of chargeRes.charges) {
+      if (charge.type === 'RECURRING') {
+        console.log('----- This charge is of type RECURRING (subscription/created) -----');
 
-            //1. Check the properties of the subscription and see if it qualifies for a discount
-            const subPropertyHeaders = new Headers();
-            subPropertyHeaders.append("X-Recharge-Access-Token", RECHARGE_API_KEY);
+        let subscription_id = charge.line_items[0].subscription_id;
+        let charge_id = charge.id;
+
+        const subPropertyHeaders = new Headers();
+        subPropertyHeaders.append("X-Recharge-Access-Token", RECHARGE_API_KEY);
+
+        const requestOptions = {
+          method: "GET",
+          headers: subPropertyHeaders
+        };
+
+        const response = await fetch(`https://api.rechargeapps.com/subscriptions/${subscription_id}`, requestOptions);
+        const result = await response.json();
+        const subscription = result.subscription;
+
+        if (subscription) {
+          const property = subscription.properties.find(prop => prop.name === 'qualifies for tiered discount');
+          if (property && property.value === true) {
+            console.log("Property found: 'qualifies for tiered discount':", property.value);
+            console.log('---** This RECURRING ORDER qualifies for discount **---');
+
+            const chargeCountHeaders = new Headers();
+            chargeCountHeaders.append("X-Recharge-Access-Token", RECHARGE_API_KEY);
 
             const requestOptions = {
               method: "GET",
-              headers: subPropertyHeaders
+              headers: chargeCountHeaders
             };
 
-            fetch(`https://api.rechargeapps.com/subscriptions/${subscription_id}`, requestOptions)
-            .then((response) => response.json())
-            .then((result) => {
-              const subscription = result.subscription;
-              if (subscription) {
-                const property = subscription.properties.find(prop => prop.name === 'qualifies for tiered discount');
-                if (property) {
-                  console.log("Property found: 'qualifies for tiered discount':", property.value);
+            const response = await fetch(`https://api.rechargeapps.com/charges/count?subscription_id=${subscription_id}`, requestOptions);
+            const result = await response.json();
+            const count = result.count;
+            console.log('Charge Count for this subscription so far is...', count);
 
-                  if(property.value == true){
-                    console.log('---** This RECURRING ORDER qualifies for discount **---')
+            console.log('====== *** ======');
+            console.log('Applying the discount code ...');
 
+            let SUB_DISCOUNT_CODE = 'CHARGE_OFF_20';
 
-                    //3. Check how many charges have already occured
-                    const chargeCountHeaders = new Headers();
-                    chargeCountHeaders.append("X-Recharge-Access-Token", RECHARGE_API_KEY);
+            const discountHeader = new Headers();
+            discountHeader.append("X-Recharge-Access-Token", RECHARGE_API_KEY);
+            discountHeader.append("Content-Type", "application/json");
 
-                    const requestOptions = {
-                    method: "GET",
-                    headers: chargeCountHeaders
-                    };
+            const raw = JSON.stringify({
+              "discount_code": SUB_DISCOUNT_CODE
+            });
 
-                    console.log('====== *** ======')
-                    console.log('Making a request to check the charge count...')
+            const discountReqOptions = {
+              method: "POST",
+              headers: discountHeader,
+              body: raw
+            };
 
-                    fetch(`https://api.rechargeapps.com/charges/count?subscription_id=${subscription_id}`, requestOptions)
-                    .then((response) => response.json())
-                    .then((result) => {
-                        const count = result.count;
-                        console.log('Charge Count for this subscription so far is...', count)
-
-
-
-                        console.log('====== *** ======')
-                        console.log('Applying the discount code ...')
-
-                      
-                        
-
-
-                        //4. Apply the subsequent discount based on the count(in this case 2)
-                        let SUB_DISCOUNT_CODE = 'CHARGE_OFF_20'
-                        
-
-
-
-                        const discountHeader = new Headers();
-                        discountHeader.append("X-Recharge-Access-Token", RECHARGE_API_KEY);
-                        discountHeader.append("Content-Type", "application/json");
-            
-                        const raw = JSON.stringify({
-                          "discount_code": SUB_DISCOUNT_CODE
-                        });
-            
-                        const discountReqOptions = {
-                          method: "POST",
-                          headers: discountHeader,
-                          body: raw
-                        };
-            
-                        fetch(`https://api.rechargeapps.com/charges/${charge_id}/apply_discount`, discountReqOptions)
-                        .then((response) => response.text())
-                        .then((result) => {
-                            console.log(`Discount code ${SUB_DISCOUNT_CODE} applied for the charge number ${count} with ID ${charge_id}`)
-                            //console.log(result)
-                            })
-                        .catch((error) => console.error(error));
-                    })
-                    .catch((error) => console.error(error));
-
-
-
-
-                  }
-                } else {
-                  console.log("Property not found: 'qualifies for tiered discount '", "this RECURRING ORDER does not qualify for discount");
-                }
-              }
-
-            })
-            .catch((error) => console.error(error));
-
+            await fetch(`https://api.rechargeapps.com/charges/${charge_id}/apply_discount`, discountReqOptions);
+            console.log(`Discount code ${SUB_DISCOUNT_CODE} applied for the charge number ${count} with ID ${charge_id}`);
+          } else {
+            console.log("Property not found: 'qualifies for tiered discount'", "this RECURRING ORDER does not qualify for discount");
           }
-      });
-    })
-    .catch((error) => console.error(error));
-})
+        }
+      }
+    }
+  } catch (error) {
+    console.error(error);
+  }
+});
+
 
 
 
