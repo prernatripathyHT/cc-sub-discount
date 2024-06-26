@@ -190,7 +190,7 @@ app.post('/subscription', async (req, res) => {
             };
 
             await fetch(`https://api.rechargeapps.com/charges/${charge_id}/apply_discount`, discountReqOptions);
-            console.log(`Discount code ${SUB_DISCOUNT_CODE} applied for the charge number ${count} with ID ${charge_id}`);
+            console.log(`Discount code ${SUB_DISCOUNT_CODE} applied for the charge number ${count} with ID ${charge_id} for ${product_title}`);
           } else {
             console.log("Property not found: 'qualifies for tiered discount'", "this RECURRING ORDER does not qualify for discount");
           }
