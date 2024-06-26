@@ -164,9 +164,6 @@ app.post('/webhook', async (req, res) => {
                       console.log('====== *** ======')
                       console.log('Applying the discount code ...')
 
-                    
-                      
-
 
                       //4. Apply the subsequent discount based on the count
                       let SUB_DISCOUNT_CODE = ''
