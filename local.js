@@ -111,7 +111,7 @@ app.post('/subscription', async (req, res) => {
         console.log('adding properties to subscription object...');
 
 
-        // console.log('TODO: Check this for all line items not just one');
+        console.log('TODO: Check this for all line items not just one');
 
 
         //let subscription_id = checkoutCharges.line_items[0].subscription_id;
@@ -162,7 +162,7 @@ app.post('/subscription', async (req, res) => {
       let charge_id = recurringCharges.id;
 
       if(subQualifiesForDiscount){
-        console.log(`-- Adding 20% off to recurring charge for ${product_title} since this Subscription qualifies for a discount --`);
+        console.log(`-- subQualifiesForDiscount: ${subQualifiesForDiscount}  ==> Adding 20% off to recurring charge for ${product_title} since this Subscription qualifies for a discount --`);
 
         const chargeCountHeaders = new Headers();
         chargeCountHeaders.append("X-Recharge-Access-Token", RECHARGE_API_KEY);
