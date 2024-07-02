@@ -111,8 +111,10 @@ app.post('/subscription', async (req, res) => {
         console.log('adding properties to subscription object...');
 
 
-        console.log('TODO: Check this for all line items not just one')
-        let subscription_id = checkoutCharges.line_items[0].subscription_id;
+        // console.log('TODO: Check this for all line items not just one');
+
+
+        //let subscription_id = checkoutCharges.line_items[0].subscription_id;
         let charge_id = checkoutCharges.id;
 
         subQualifiesForDiscount = true;
