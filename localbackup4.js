@@ -7,7 +7,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 const RECHARGE_API_KEY = 'sk_test_2x2_b69d7aa3fe6f2600f0375946b77f8eb00dd2bf034133a9bd9702efd3bb2b3400'
-// const MONGO_COLLECTION = 'sub_payloads_2'
+// const MONGO_COLLECTION = 'sub_payloads_1'
 const MONGO_COLLECTION = 'webhooks'
 
 // MongoDB connection setup
@@ -55,13 +55,10 @@ app.post('/subscription', async (req, res) => {
 
   let subscription_id = req.body.subscription.id;
   let product_title = req.body.subscription.product_title;
-  let product_price = req.body.subscription.price;
 
   console.table({
     "subscription_id": subscription_id,
-    "product_title": product_title,
-    "product_price": product_price
-
+    "product": product_title
   });
 
   console.log('Subscription ID for product ', product_title , 'is ===>', subscription_id);
@@ -98,12 +95,8 @@ app.post('/subscription', async (req, res) => {
 
 
     
-    if (checkoutCharges) {
-      console.log(`checkoutCharges for ${subscription_id} ${product_title} ===>`, checkoutCharges.discount_codes ? checkoutCharges.discount_codes : [], checkoutCharges.line_items.map((item) => item.title));
-    }
-    if (recurringCharges) {
-      console.log(`recurringCharges for ${subscription_id} ${product_title} ===>`, recurringCharges.discount_codes ? recurringCharges.discount_codes : [], recurringCharges.line_items.map((item) => item.title));
-    }
+    console.log(`checkoutCharges for ${subscription_id} ${product_title} ===>`, checkoutCharges.discount_codes ? checkoutCharges.discount_codes : [], checkoutCharges.line_items.map((item) => item.title));
+    console.log(`recurringCharges for ${subscription_id} ${product_title} ===>`, recurringCharges.discount_codes ? recurringCharges.discount_codes : [], recurringCharges.line_items.map((item) => item.title));
 
 
     let subQualifiesForDiscount = false;
@@ -113,12 +106,14 @@ app.post('/subscription', async (req, res) => {
     if (checkoutCharges) {
       console.log(`----- This charge is of type CHECKOUT (subscription/created) for ${product_title} -----`);
 
-      if (checkoutCharges.discount_codes && checkoutCharges.discount_codes.length > 0 && checkoutCharges.discount_codes[0].code === 'TEST_SUB_5') {
+      if (checkoutCharges.discount_codes && checkoutCharges.discount_codes.length > 0 && checkoutCharges.discount_codes[0].code === 'TIERED_SUB_5') {
         console.log('------- This charge qualifies for TIERED DISCOUNT ------');
         console.log('adding properties to subscription object...');
 
 
         console.log('TODO: Check this for all line items not just one');
+
+
         //let subscription_id = checkoutCharges.line_items[0].subscription_id;
         let charge_id = checkoutCharges.id;
 
@@ -182,37 +177,27 @@ app.post('/subscription', async (req, res) => {
         const count = result.count;
         console.log('Charge Count for this subscription so far is...', count);
 
-
-        //Instead of applying a discount to the charge, change the price of the subscription instead:
         console.log('====== *** ======');
-        console.log('Updating the Value of the Subscription  ...');
-        console.log(`Current price for ${product_title} is ${product_price}`);
+        console.log('Applying the discount code ...');
 
-        let discounted20Price = product_price * 0.8;
+        let SUB_DISCOUNT_CODE = 'CHARGE_OFF_20';
 
-        const discountHeaders = new Headers();
-        discountHeaders.append("X-Recharge-Access-Token", RECHARGE_API_KEY);
-        discountHeaders.append("X-Recharge-Version", "2021-11");
-        discountHeaders.append("Content-Type", "application/json");
+        const discountHeader = new Headers();
+        discountHeader.append("X-Recharge-Access-Token", RECHARGE_API_KEY);
+        discountHeader.append("Content-Type", "application/json");
 
-        const discountedPrice = JSON.stringify({
-          "price": discounted20Price
+        const raw = JSON.stringify({
+          "discount_code": SUB_DISCOUNT_CODE
         });
 
-        const discReqOptions = {
-          method: "PUT",
-          headers: discountHeaders,
-          body: discountedPrice,
-          redirect: "follow"
+        const discountReqOptions = {
+          method: "POST",
+          headers: discountHeader,
+          body: raw
         };
 
-        try {
-          const response = await fetch(`https://api.rechargeapps.com/subscriptions/${subscription_id}`, discReqOptions);
-          const result = await response.json();
-          console.log(`Applied 20% disocunt to ${product_title} for the charge number ${count} . Updated price is now ===> ${product_price}`);
-        } catch (error) {
-          console.error(error);
-        }
+        await fetch(`https://api.rechargeapps.com/charges/${charge_id}/apply_discount`, discountReqOptions);
+        console.log(`Discount code ${SUB_DISCOUNT_CODE} applied for the charge number ${count} with ID ${charge_id} for ${product_title}`);
 
       }
       else{
