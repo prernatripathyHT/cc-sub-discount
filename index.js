@@ -127,7 +127,10 @@ app.post('/subscription', async (req, res) => {
         console.log('adding properties to subscription object...');
 
 
-        console.log('TODO: Check this for all line items not just one');
+        //TODO: Save the original subscription price in a property to access later
+
+
+        console.log('DONE: Check this for all line items not just one');
         //let subscription_id = checkoutCharges.line_items[0].subscription_id;
         let charge_id = checkoutCharges.id;
 
@@ -147,6 +150,10 @@ app.post('/subscription', async (req, res) => {
             {
               "name": "qualifies for tiered discount",
               "value": true
+            },
+            {
+              "name": "original subscription price",
+              "value": product_price
             }
           ]
         });
@@ -272,7 +279,10 @@ app.post('/charge', async (req, res) => {
       let subscription_id = line_item.subscription_id;
       let product_title = line_item.title;
       let product_price = line_item.price;
-      let product_original_price = line_item.original_price;
+      // let product_original_price = line_item.original_price;
+
+
+
 
       // 0. Check the charge number of the charge
       const chargeCountHeaders = new Headers();
@@ -311,6 +321,10 @@ app.post('/charge', async (req, res) => {
 
           if (subscription) {
             const property = subscription.properties.find(prop => prop.name === 'qualifies for tiered discount');
+            const originalSubPrice = subscription.properties.find(prop => prop.name === 'original subscription price');
+
+            console.log(`originalSubPrice for ${product_title} is ${originalSubPrice}`);
+            
             if (property) {
               console.log(`Property found: ${product_title} 'qualifies for tiered discount':`, property.value);
 
@@ -344,7 +358,7 @@ app.post('/charge', async (req, res) => {
                 if (SUB_DISCOUNT_PERCENT != '') {
                   console.log('** PROCEEDING WITH DISCOUNT CODE APPLICATION');
 
-                  let discountedSubPrice = product_original_price * ((100 - SUB_DISCOUNT_PERCENT) / 100);
+                  let discountedSubPrice = originalSubPrice * ((100 - SUB_DISCOUNT_PERCENT) / 100);
                   console.log(`Discount percentage to be applied for ${product_title} is ${SUB_DISCOUNT_PERCENT}%`);
                   console.log(`Discounted price for ${product_title} is now ${discountedSubPrice}`);
 
@@ -382,7 +396,7 @@ app.post('/charge', async (req, res) => {
                   discountHeaders.append("Content-Type", "application/json");
 
                   const discountedPrice = JSON.stringify({
-                    "price": product_original_price,
+                    "price": originalSubPrice,
                   });
 
                   const discReqOptions = {
