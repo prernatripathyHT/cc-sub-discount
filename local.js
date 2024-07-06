@@ -323,8 +323,8 @@ app.post('/charge', async (req, res) => {
             const property = subscription.properties.find(prop => prop.name === 'qualifies for tiered discount');
             const originalSubPrice = subscription.properties.find(prop => prop.name === 'original subscription price');
 
-            console.log(`originalSubPrice for ${product_title} is ${originalSubPrice}`);
-            
+            console.log(`originalSubPrice for ${product_title} is ${originalSubPrice.value}`);
+
             if (property) {
               console.log(`Property found: ${product_title} 'qualifies for tiered discount':`, property.value);
 
@@ -356,9 +356,9 @@ app.post('/charge', async (req, res) => {
 
                 console.log(`Discount percentage to be applied for ${product_title} is ${SUB_DISCOUNT_PERCENT}`);
                 if (SUB_DISCOUNT_PERCENT != '') {
-                  console.log('** PROCEEDING WITH DISCOUNT CODE APPLICATION');
+                  console.log(`** PROCEEDING WITH DISCOUNT CODE APPLICATION for ${product_title}`);
 
-                  let discountedSubPrice = originalSubPrice * ((100 - SUB_DISCOUNT_PERCENT) / 100);
+                  let discountedSubPrice = originalSubPrice.value * ((100 - SUB_DISCOUNT_PERCENT) / 100);
                   console.log(`Discount percentage to be applied for ${product_title} is ${SUB_DISCOUNT_PERCENT}%`);
                   console.log(`Discounted price for ${product_title} is now ${discountedSubPrice}`);
 
@@ -396,7 +396,7 @@ app.post('/charge', async (req, res) => {
                   discountHeaders.append("Content-Type", "application/json");
 
                   const discountedPrice = JSON.stringify({
-                    "price": originalSubPrice,
+                    "price": originalSubPrice.value,
                   });
 
                   const discReqOptions = {
