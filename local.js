@@ -37,6 +37,11 @@ app.get('/', (req, res) => {
 
 
 
+//List of Products that Qualify for the Discount
+const productsQualifiedForDiscount = [7046600589363, 7046612353075, 7046607831091, 7046618611763, 7046617956403]
+
+
+
 // Webhook - subscription/created
 app.post('/subscription', async (req, res) => {
   console.log('========= *** =========');
@@ -56,11 +61,13 @@ app.post('/subscription', async (req, res) => {
   let subscription_id = req.body.subscription.id;
   let product_title = req.body.subscription.product_title;
   let product_price = req.body.subscription.price;
+  let product_id = req.body.subscription.shopify_product_id;
 
   console.table({
     "subscription_id": subscription_id,
     "product_title": product_title,
-    "product_price": product_price
+    "product_price": product_price,
+    "product_id": product_id
 
   });
 
@@ -113,7 +120,9 @@ app.post('/subscription', async (req, res) => {
     if (checkoutCharges) {
       console.log(`----- This charge is of type CHECKOUT (subscription/created) for ${product_title} -----`);
 
-      if (checkoutCharges.discount_codes && checkoutCharges.discount_codes.length > 0 && checkoutCharges.discount_codes[0].code === 'TEST_SUB_5') {
+
+      //Add  a check here to see if the Product Qualifies for discount (because discount code is applied at charge level)
+      if (checkoutCharges.discount_codes && checkoutCharges.discount_codes.length > 0 && checkoutCharges.discount_codes[0].code === 'TEST_SUB_5' && productsQualifiedForDiscount.includes(product_id)) {
         console.log('------- This charge qualifies for TIERED DISCOUNT ------');
         console.log('adding properties to subscription object...');
 
@@ -186,7 +195,7 @@ app.post('/subscription', async (req, res) => {
         //Instead of applying a discount to the charge, change the price of the subscription instead:
         console.log('====== *** ======');
         console.log('Updating the Value of the Subscription  ...');
-        console.log(`Current price for ${product_title} is ${product_price}`);
+        console.log(`Current price for ${product_title} is ${product_price} for ${subscription_id}`);
 
         let discounted20Price = product_price * 0.8;
 
@@ -209,7 +218,7 @@ app.post('/subscription', async (req, res) => {
         try {
           const response = await fetch(`https://api.rechargeapps.com/subscriptions/${subscription_id}`, discReqOptions);
           const result = await response.json();
-          console.log(`Applied 20% disocunt to ${product_title} for the charge number ${count} . Updated price is now ===> ${product_price}`);
+          console.log(`Applied 20% disocunt to ${product_title} for the charge number ${count} . Updated price is now ===> ${discountedPrice}`);
         } catch (error) {
           console.error(error);
         }
