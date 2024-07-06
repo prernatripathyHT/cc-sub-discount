@@ -272,6 +272,7 @@ app.post('/charge', async (req, res) => {
       let subscription_id = line_item.subscription_id;
       let product_title = line_item.title;
       let product_price = line_item.price;
+      let product_original_price = line_item.original_price;
 
       // 0. Check the charge number of the charge
       const chargeCountHeaders = new Headers();
@@ -343,7 +344,7 @@ app.post('/charge', async (req, res) => {
                 if (SUB_DISCOUNT_PERCENT != '') {
                   console.log('** PROCEEDING WITH DISCOUNT CODE APPLICATION');
 
-                  let discountedSubPrice = product_price * ((100 - SUB_DISCOUNT_PERCENT) / 100);
+                  let discountedSubPrice = product_original_price * ((100 - SUB_DISCOUNT_PERCENT) / 100);
                   console.log(`Discount percentage to be applied for ${product_title} is ${SUB_DISCOUNT_PERCENT}%`);
                   console.log(`Discounted price for ${product_title} is now ${discountedSubPrice}`);
 
@@ -374,6 +375,33 @@ app.post('/charge', async (req, res) => {
                 } else {
                   // TODO: Restore the subscription value to Original Price once all 5 discounts are applied
                   console.log(`** ALL 5 DISCOUNTS APPLIED: Restoring ${product_title} to its original price...`);
+
+                  const discountHeaders = new Headers();
+                  discountHeaders.append("X-Recharge-Access-Token", RECHARGE_API_KEY);
+                  discountHeaders.append("X-Recharge-Version", "2021-11");
+                  discountHeaders.append("Content-Type", "application/json");
+
+                  const discountedPrice = JSON.stringify({
+                    "price": product_original_price,
+                  });
+
+                  const discReqOptions = {
+                    method: "PUT",
+                    headers: discountHeaders,
+                    body: discountedPrice,
+                    redirect: "follow",
+                  };
+
+                  try {
+                    const discountResponse = await fetch(`https://api.rechargeapps.com/subscriptions/${subscription_id}`, discReqOptions);
+                    const discountResult = await discountResponse.json();
+                    console.log(`Applied ${SUB_DISCOUNT_PERCENT} discount to ${product_title} for the charge number ${count}. Updated price is now ===> ${discountedPrice}`);
+                  } catch (error) {
+                    console.error(error);
+                  }
+
+
+
                 }
               }
             } else {
