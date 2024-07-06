@@ -345,7 +345,7 @@ app.post('/charge', async (req, res) => {
 
                   let discountedSubPrice = product_price * ((100 - SUB_DISCOUNT_PERCENT) / 100);
                   console.log(`Discount percentage to be applied for ${product_title} is ${SUB_DISCOUNT_PERCENT}%`);
-                  console.log(`Discounted price for ${product_title} is now ${discountedPrice}`);
+                  console.log(`Discounted price for ${product_title} is now ${discountedSubPrice}`);
 
 
                   const discountHeaders = new Headers();
