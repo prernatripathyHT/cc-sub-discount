@@ -323,10 +323,11 @@ app.post('/charge', async (req, res) => {
             const property = subscription.properties.find(prop => prop.name === 'qualifies for tiered discount');
             const originalSubPrice = subscription.properties.find(prop => prop.name === 'original subscription price');
 
-            console.log(`originalSubPrice for ${product_title} is ${originalSubPrice.value}`);
+           
 
             if (property && originalSubPrice) {
               console.log(`Property found: ${product_title} 'qualifies for tiered discount':`, property.value);
+              console.log(`originalSubPrice for ${product_title} is ${originalSubPrice.value}`);
 
               if (property.value === true) {
                 console.log('---** This RECURRING ORDER qualifies for discount **---');
