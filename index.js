@@ -271,6 +271,7 @@ app.post('/charge', async (req, res) => {
 
       let subscription_id = line_item.subscription_id;
       let product_title = line_item.title;
+      let product_price = line_item.price;
 
       // 0. Check the charge number of the charge
       const chargeCountHeaders = new Headers();
