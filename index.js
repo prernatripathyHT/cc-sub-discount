@@ -325,7 +325,7 @@ app.post('/charge', async (req, res) => {
 
             console.log(`originalSubPrice for ${product_title} is ${originalSubPrice.value}`);
 
-            if (property) {
+            if (property && originalSubPrice) {
               console.log(`Property found: ${product_title} 'qualifies for tiered discount':`, property.value);
 
               if (property.value === true) {
