@@ -179,10 +179,11 @@ app.post('/subscription', async (req, res) => {
     if (recurringCharges) {
       console.log(`----- This charge is of type RECURRING (subscription/created) for ${product_title}  -----`);
 
-      let subscription_id = recurringCharges.line_items[0].subscription_id;
+      //let subscription_id = recurringCharges.line_items[0].subscription_id; //bruhhhhhhhhhhh....
       let charge_id = recurringCharges.id;
 
       if(subQualifiesForDiscount){
+        //TODO: Error is somewhere here
         console.log(`-- subQualifiesForDiscount: ${subQualifiesForDiscount}  ==> Adding 20% off to recurring charge for ${product_title} since this Subscription qualifies for a discount --`);
 
         const chargeCountHeaders = new Headers();
