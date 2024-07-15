@@ -7,8 +7,8 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 const RECHARGE_API_KEY = 'sk_test_2x2_b69d7aa3fe6f2600f0375946b77f8eb00dd2bf034133a9bd9702efd3bb2b3400'
-const MONGO_COLLECTION = 'sub_payloads_3'
-// const MONGO_COLLECTION = 'webhooks'
+// const MONGO_COLLECTION = 'sub_payloads_3'
+const MONGO_COLLECTION = 'webhooks'
 
 // MongoDB connection setup
 const connectDB = async () => {
@@ -327,14 +327,12 @@ app.post('/charge', async (req, res) => {
           if (subscription) {
             const property = subscription.properties.find(prop => prop.name === 'qualifies for tiered discount');
             const originalSubPrice = subscription.properties.find(prop => prop.name === 'original subscription price');
-            const chargesWithDiscount = subscription.properties.find(prop => prop.name === 'charges with discount applied');
 
             
 
             if (property && originalSubPrice) {
               console.log(`Property found: ${product_title} 'qualifies for tiered discount':`, property.value);
               console.log(`originalSubPrice for ${product_title} is ${originalSubPrice.value}`);
-              console.log(`Number of Charges with Discount Applied for ${product_title} so far is ${chargesWithDiscount}`)
 
               if (property.value === true) {
                 console.log('---** This RECURRING ORDER qualifies for discount **---');
@@ -345,36 +343,17 @@ app.post('/charge', async (req, res) => {
 
                 // 4. Apply the subsequent discount based on the count
                 let SUB_DISCOUNT_PERCENT = '';
-                // switch (count) {
-                //   case 3:
-                //     console.log('Count is 3');
-                //     SUB_DISCOUNT_PERCENT = 30;
-                //     break;
-                //   case 4:
-                //     console.log('Count is 4');
-                //     SUB_DISCOUNT_PERCENT = 40;
-                //     break;
-                //   case 5:
-                //     console.log('Count is 5');
-                //     SUB_DISCOUNT_PERCENT = 50;
-                //     break;
-                //   default:
-                //     console.log('Count is out of range');
-                // }
-
-
-                //UPDATE: Instead of checking the number of charges, we're checking the number of charges with discount (for SKIPPED charges)
-                switch (chargesWithDiscount) {
-                  case 2:
-                    console.log('Discount Applied to 2 charges so far');
+                switch (count) {
+                  case 3:
+                    console.log('Count is 3');
                     SUB_DISCOUNT_PERCENT = 30;
                     break;
-                  case 3:
-                    console.log('Discount Applied to 3 charges so far');
+                  case 4:
+                    console.log('Count is 4');
                     SUB_DISCOUNT_PERCENT = 40;
                     break;
-                  case 4:
-                    console.log('Discount Applied to 4 charges so far');
+                  case 5:
+                    console.log('Count is 5');
                     SUB_DISCOUNT_PERCENT = 50;
                     break;
                   default:
@@ -397,12 +376,6 @@ app.post('/charge', async (req, res) => {
 
                   const discountedPrice = JSON.stringify({
                     "price": discountedSubPrice,
-                    "properties": [
-                      {
-                        "name": "charges with discount applied",
-                        "value": chargesWithDiscount + 1
-                      }
-                    ]
                   });
 
                   const discReqOptions = {

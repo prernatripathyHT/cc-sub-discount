@@ -154,6 +154,10 @@ app.post('/subscription', async (req, res) => {
             {
               "name": "original subscription price",
               "value": product_price
+            },
+            {
+              "name": "charges with discount applied",
+              "value": 2
             }
           ]
         });
@@ -323,12 +327,14 @@ app.post('/charge', async (req, res) => {
           if (subscription) {
             const property = subscription.properties.find(prop => prop.name === 'qualifies for tiered discount');
             const originalSubPrice = subscription.properties.find(prop => prop.name === 'original subscription price');
+            const chargesWithDiscount = subscription.properties.find(prop => prop.name === 'charges with discount applied');
 
             
 
             if (property && originalSubPrice) {
               console.log(`Property found: ${product_title} 'qualifies for tiered discount':`, property.value);
               console.log(`originalSubPrice for ${product_title} is ${originalSubPrice.value}`);
+              console.log(`Number of Charges with Discount Applied for ${product_title} so far is ${chargesWithDiscount}`)
 
               if (property.value === true) {
                 console.log('---** This RECURRING ORDER qualifies for discount **---');
@@ -339,17 +345,36 @@ app.post('/charge', async (req, res) => {
 
                 // 4. Apply the subsequent discount based on the count
                 let SUB_DISCOUNT_PERCENT = '';
-                switch (count) {
-                  case 3:
-                    console.log('Count is 3');
+                // switch (count) {
+                //   case 3:
+                //     console.log('Count is 3');
+                //     SUB_DISCOUNT_PERCENT = 30;
+                //     break;
+                //   case 4:
+                //     console.log('Count is 4');
+                //     SUB_DISCOUNT_PERCENT = 40;
+                //     break;
+                //   case 5:
+                //     console.log('Count is 5');
+                //     SUB_DISCOUNT_PERCENT = 50;
+                //     break;
+                //   default:
+                //     console.log('Count is out of range');
+                // }
+
+
+                //UPDATE: Instead of checking the number of charges, we're checking the number of charges with discount (for SKIPPED charges)
+                switch (chargesWithDiscount) {
+                  case 2:
+                    console.log('Discount Applied to 2 charges so far');
                     SUB_DISCOUNT_PERCENT = 30;
                     break;
-                  case 4:
-                    console.log('Count is 4');
+                  case 3:
+                    console.log('Discount Applied to 3 charges so far');
                     SUB_DISCOUNT_PERCENT = 40;
                     break;
-                  case 5:
-                    console.log('Count is 5');
+                  case 4:
+                    console.log('Discount Applied to 4 charges so far');
                     SUB_DISCOUNT_PERCENT = 50;
                     break;
                   default:
@@ -372,6 +397,12 @@ app.post('/charge', async (req, res) => {
 
                   const discountedPrice = JSON.stringify({
                     "price": discountedSubPrice,
+                    "properties": [
+                      {
+                        "name": "charges with discount applied",
+                        "value": chargesWithDiscount + 1
+                      }
+                    ]
                   });
 
                   const discReqOptions = {
