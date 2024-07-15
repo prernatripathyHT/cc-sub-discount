@@ -325,10 +325,25 @@ app.post('/charge', async (req, res) => {
           const subscription = subResult.subscription;
 
           if (subscription) {
+            const allSubscriptionProperties = subscription.properties;
+            console.log('allSubscriptionProperties', allSubscriptionProperties)
             const property = subscription.properties.find(prop => prop.name === 'qualifies for tiered discount');
             const originalSubPrice = subscription.properties.find(prop => prop.name === 'original subscription price');
             const chargesWithDiscount = subscription.properties.find(prop => prop.name === 'charges with discount applied');
 
+
+            // Function to update the property value
+            function updatePropertyValue(properties, propertyName, newValue) {
+              return properties.map(property => {
+                  if (property.name === propertyName) {
+                      return {
+                          ...property,
+                          value: newValue
+                      };
+                  }
+                  return property;
+              });
+            }
             
 
             if (property && originalSubPrice) {
@@ -395,12 +410,17 @@ app.post('/charge', async (req, res) => {
                   discountHeaders.append("X-Recharge-Version", "2021-11");
                   discountHeaders.append("Content-Type", "application/json");
 
+                  let updateDiscountCharges = chargesWithDiscount.value + 1;
+
+                  let updatedProperties = updatePropertyValue(existingProperties, "charges with discount applied", updateDiscountCharges);
+
+
                   const discountedPrice = JSON.stringify({
                     "price": discountedSubPrice,
                     "properties": [
                       {
                         "name": "charges with discount applied",
-                        "value": chargesWithDiscount.value + 1
+                        "value": updatedProperties
                       }
                     ]
                   });
