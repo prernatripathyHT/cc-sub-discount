@@ -7,7 +7,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 const RECHARGE_API_KEY = 'sk_test_2x2_b69d7aa3fe6f2600f0375946b77f8eb00dd2bf034133a9bd9702efd3bb2b3400'
-const MONGO_COLLECTION = 'sub_payloads_2'
+const MONGO_COLLECTION = 'sub_payloads_3'
 // const MONGO_COLLECTION = 'webhooks'
 
 // MongoDB connection setup
@@ -249,7 +249,7 @@ app.post('/subscription', async (req, res) => {
 
 
 
-// Webhook route handler
+// Webhook - charge/created
 app.post('/charge', async (req, res) => {
   console.log('========= *** =========');
   console.log('Received charge/created webhook ');
@@ -433,6 +433,59 @@ app.post('/charge', async (req, res) => {
     }
   }
 });
+
+
+
+// Webhook - subscription/skipped
+app.post('/skip', async (req, res) => {
+
+
+  console.log('========= *** =========');
+  console.log('Received subscription/skipped webhook ');
+  console.log('========= *** =========');
+
+  console.log('Received sub/skipped webhook:', req.body);
+
+
+  try {
+    // Save the payload to MongoDB
+    const savedPayload = await mongoose.connection.db.collection(`${MONGO_COLLECTION}`).insertOne(req.body);
+    console.log('Webhook payload saved:', savedPayload);
+
+    res.sendStatus(200); // Respond to the webhook request
+  } catch (err) {
+    console.error('Error saving webhook payload:', err);
+    res.sendStatus(500); // Respond with an error status
+  }
+
+});
+
+
+
+// Webhook - subscription/unskipped
+app.post('/unskip', async (req, res) => {
+
+
+  console.log('========= *** =========');
+  console.log('Received subscription/unskipped webhook ');
+  console.log('========= *** =========');
+
+  console.log('Received sub/unskipped webhook:', req.body);
+
+
+  try {
+    // Save the payload to MongoDB
+    const savedPayload = await mongoose.connection.db.collection(`${MONGO_COLLECTION}`).insertOne(req.body);
+    console.log('Webhook payload saved:', savedPayload);
+
+    res.sendStatus(200); // Respond to the webhook request
+  } catch (err) {
+    console.error('Error saving webhook payload:', err);
+    res.sendStatus(500); // Respond with an error status
+  }
+
+});
+
 
 
 
