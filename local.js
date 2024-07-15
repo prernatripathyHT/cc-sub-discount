@@ -369,7 +369,7 @@ app.post('/charge', async (req, res) => {
 
                   const discountHeaders = new Headers();
                   discountHeaders.append("X-Recharge-Access-Token", RECHARGE_API_KEY);
-                  discountHeaders.append("X-Recharge-Version", "2021-11");
+
                   discountHeaders.append("Content-Type", "application/json");
 
                   let updateDiscountCharges = chargesWithDiscount.value + 1;
@@ -385,7 +385,8 @@ app.post('/charge', async (req, res) => {
                     return property;
                   });
 
-                  console.log('updatedProperties  ===> ', updatedProperties)
+                  console.log('updatedProperties ===> ', JSON.stringify(updatedProperties, null, 2));
+
 
                   // Include the updated properties in the request body
                   const discountedPrice = JSON.stringify({
@@ -398,11 +399,13 @@ app.post('/charge', async (req, res) => {
                   const discReqOptions = {
                     method: "PUT",
                     headers: discountHeaders,
-                    body: discountedPrice                  };
+                    body: discountedPrice                  
+                  };
 
                   try {
                     const discountResponse = await fetch(`https://api.rechargeapps.com/subscriptions/${subscription_id}`, discReqOptions);
                     const discountResult = await discountResponse.json();
+                    console.log(`After Applying the RECURRING Discount => ${discountResult}`)
                     console.log(`Applied ${SUB_DISCOUNT_PERCENT}% discount to ${product_title} for the charge number ${count}. Updated price is now ===> ${discountedPrice}`);
                   } catch (error) {
                     console.error('Error applying discount:', error);
