@@ -254,12 +254,11 @@ app.post('/subscription', async (req, res) => {
 
 
 // Webhook - charge/created
+// Webhook - charge/created
 app.post('/charge', async (req, res) => {
   console.log('========= *** =========');
   console.log('Received charge/created webhook ');
   console.log('========= *** =========');
-
-  //console.log('Received webhook:', req.body);
 
   try {
     // Save the payload to MongoDB
@@ -270,6 +269,7 @@ app.post('/charge', async (req, res) => {
   } catch (err) {
     console.error('Error saving webhook payload:', err);
     res.sendStatus(500); // Respond with an error status
+    return;
   }
 
   if (req.body.charge.type === 'RECURRING') {
@@ -284,10 +284,6 @@ app.post('/charge', async (req, res) => {
       let subscription_id = line_item.subscription_id;
       let product_title = line_item.title;
       let product_price = line_item.price;
-      // let product_original_price = line_item.original_price;
-
-
-
 
       // 0. Check the charge number of the charge
       const chargeCountHeaders = new Headers();
@@ -305,11 +301,11 @@ app.post('/charge', async (req, res) => {
         const chargeResponse = await fetch(`https://api.rechargeapps.com/charges/count?subscription_id=${subscription_id}`, chargeOptns);
         const chargeResult = await chargeResponse.json();
         const count = chargeResult.count;
-        console.log(`Charge Count for this subscription(inside charge/created webhook) for ${product_title} so far is...`, count);
+        console.log(`Charge Count for this subscription (inside charge/created webhook) for ${product_title} so far is...`, count);
 
         // Only proceed if the charge count is equal to or more than 3
         if (count >= 3) {
-          console.log(`** TAKING ACTION for this charge/created webhook for ${product_title} as the charge count is more than equal to 3 **`);
+          console.log(`** TAKING ACTION for this charge/created webhook for ${product_title} as the charge count is more than or equal to 3 **`);
 
           // 1. Check the properties of the subscription and see if it qualifies for a discount
           const subPropertyHeaders = new Headers();
@@ -326,30 +322,15 @@ app.post('/charge', async (req, res) => {
 
           if (subscription) {
             const allSubscriptionProperties = subscription.properties;
-            console.log('allSubscriptionProperties', allSubscriptionProperties)
+            console.log('allSubscriptionProperties', allSubscriptionProperties);
             const property = subscription.properties.find(prop => prop.name === 'qualifies for tiered discount');
             const originalSubPrice = subscription.properties.find(prop => prop.name === 'original subscription price');
             const chargesWithDiscount = subscription.properties.find(prop => prop.name === 'charges with discount applied');
 
-
-            // Function to update the property value
-            function updatePropertyValue(properties, propertyName, newValue) {
-              return properties.map(property => {
-                  if (property.name === propertyName) {
-                      return {
-                          ...property,
-                          value: newValue
-                      };
-                  }
-                  return property;
-              });
-            }
-            
-
-            if (property && originalSubPrice) {
+            if (property && originalSubPrice && chargesWithDiscount) {
               console.log(`Property found: ${product_title} 'qualifies for tiered discount':`, property.value);
               console.log(`originalSubPrice for ${product_title} is ${originalSubPrice.value}`);
-              console.log(`Number of Charges with Discount Applied for ${product_title} so far is ${chargesWithDiscount.value}`)
+              console.log(`Number of Charges with Discount Applied for ${product_title} so far is ${chargesWithDiscount.value}`);
 
               if (property.value === true) {
                 console.log('---** This RECURRING ORDER qualifies for discount **---');
@@ -358,27 +339,8 @@ app.post('/charge', async (req, res) => {
                 console.log('====== *** ======');
                 console.log('Applying the discount code ...');
 
-                // 4. Apply the subsequent discount based on the count
+                // Apply the subsequent discount based on the count
                 let SUB_DISCOUNT_PERCENT = '';
-                // switch (count) {
-                //   case 3:
-                //     console.log('Count is 3');
-                //     SUB_DISCOUNT_PERCENT = 30;
-                //     break;
-                //   case 4:
-                //     console.log('Count is 4');
-                //     SUB_DISCOUNT_PERCENT = 40;
-                //     break;
-                //   case 5:
-                //     console.log('Count is 5');
-                //     SUB_DISCOUNT_PERCENT = 50;
-                //     break;
-                //   default:
-                //     console.log('Count is out of range');
-                // }
-
-
-                //UPDATE: Instead of checking the number of charges, we're checking the number of charges with discount (for SKIPPED charges)
                 switch (chargesWithDiscount.value) {
                   case 2:
                     console.log('Discount Applied to 2 charges so far');
@@ -397,13 +359,12 @@ app.post('/charge', async (req, res) => {
                 }
 
                 console.log(`Discount percentage to be applied for ${product_title} is ${SUB_DISCOUNT_PERCENT}`);
-                if (SUB_DISCOUNT_PERCENT != '') {
+                if (SUB_DISCOUNT_PERCENT !== '') {
                   console.log(`** PROCEEDING WITH DISCOUNT CODE APPLICATION for ${product_title}`);
 
                   let discountedSubPrice = originalSubPrice.value * ((100 - SUB_DISCOUNT_PERCENT) / 100);
                   console.log(`Discount percentage to be applied for ${product_title} is ${SUB_DISCOUNT_PERCENT}%`);
                   console.log(`Discounted price for ${product_title} is now ${discountedSubPrice}`);
-
 
                   const discountHeaders = new Headers();
                   discountHeaders.append("X-Recharge-Access-Token", RECHARGE_API_KEY);
@@ -412,18 +373,23 @@ app.post('/charge', async (req, res) => {
 
                   let updateDiscountCharges = chargesWithDiscount.value + 1;
 
-                  let updatedProperties = updatePropertyValue(existingProperties, "charges with discount applied", updateDiscountCharges);
-
+                  // Update the properties array
+                  let updatedProperties = subscription.properties.map(property => {
+                    if (property.name === "charges with discount applied") {
+                      return {
+                        ...property,
+                        value: updateDiscountCharges
+                      };
+                    }
+                    return property;
+                  });
 
                   const discountedPrice = JSON.stringify({
                     "price": discountedSubPrice,
-                    "properties": [
-                      {
-                        "name": "charges with discount applied",
-                        "value": updatedProperties
-                      }
-                    ]
+                    "properties": updatedProperties
                   });
+
+                  console.log(`Updated Properties for ${product_title} is ${discountedPrice}`);
 
                   const discReqOptions = {
                     method: "PUT",
@@ -435,55 +401,53 @@ app.post('/charge', async (req, res) => {
                   try {
                     const discountResponse = await fetch(`https://api.rechargeapps.com/subscriptions/${subscription_id}`, discReqOptions);
                     const discountResult = await discountResponse.json();
-                    console.log(`Applied ${SUB_DISCOUNT_PERCENT} discount to ${product_title} for the charge number ${count}. Updated price is now ===> ${discountedPrice}`);
+                    console.log(`Applied ${SUB_DISCOUNT_PERCENT}% discount to ${product_title} for the charge number ${count}. Updated price is now ===> ${discountedPrice}`);
                   } catch (error) {
-                    console.error(error);
+                    console.error('Error applying discount:', error);
                   }
                 } else {
-                  // TODO: Restore the subscription value to Original Price once all 5 discounts are applied
-                  console.log(`** ALL 5 DISCOUNTS APPLIED: Restoring ${product_title} to its original price...`);
+                  // Restore the subscription value to Original Price once all discounts are applied
+                  console.log(`** ALL DISCOUNTS APPLIED: Restoring ${product_title} to its original price...`);
 
                   const discountHeaders = new Headers();
                   discountHeaders.append("X-Recharge-Access-Token", RECHARGE_API_KEY);
                   discountHeaders.append("X-Recharge-Version", "2021-11");
                   discountHeaders.append("Content-Type", "application/json");
 
-                  const discountedPrice = JSON.stringify({
+                  const restorePrice = JSON.stringify({
                     "price": originalSubPrice.value,
                   });
 
-                  const discReqOptions = {
+                  const restoreReqOptions = {
                     method: "PUT",
                     headers: discountHeaders,
-                    body: discountedPrice,
+                    body: restorePrice,
                     redirect: "follow",
                   };
 
                   try {
-                    const discountResponse = await fetch(`https://api.rechargeapps.com/subscriptions/${subscription_id}`, discReqOptions);
-                    const discountResult = await discountResponse.json();
-                    console.log(`Applied ${SUB_DISCOUNT_PERCENT} discount to ${product_title} for the charge number ${count}. Updated price is now ===> ${discountedPrice}`);
+                    const restoreResponse = await fetch(`https://api.rechargeapps.com/subscriptions/${subscription_id}`, restoreReqOptions);
+                    const restoreResult = await restoreResponse.json();
+                    console.log(`Restored ${product_title} to its original price: ${originalSubPrice.value}`);
                   } catch (error) {
-                    console.error(error);
+                    console.error('Error restoring price:', error);
                   }
-
-
-
                 }
               }
             } else {
-              console.log("Property not found: 'qualifies for tiered discount '", `this RECURRING ORDER for ${product_title} does not qualify for discount`);
+              console.log(`Properties not found: 'qualifies for tiered discount' or 'original subscription price' or 'charges with discount applied'`);
             }
           }
         } else {
           console.log(`** NO ACTION for this charge/created webhook for ${product_title} as the charge count is less than 3 **`);
         }
       } catch (error) {
-        console.error(error);
+        console.error('Error fetching charge count or subscription:', error);
       }
     }
   }
 });
+
 
 
 
