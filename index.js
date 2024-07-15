@@ -334,7 +334,7 @@ app.post('/charge', async (req, res) => {
             if (property && originalSubPrice) {
               console.log(`Property found: ${product_title} 'qualifies for tiered discount':`, property.value);
               console.log(`originalSubPrice for ${product_title} is ${originalSubPrice.value}`);
-              console.log(`Number of Charges with Discount Applied for ${product_title} so far is ${chargesWithDiscount}`)
+              console.log(`Number of Charges with Discount Applied for ${product_title} so far is ${chargesWithDiscount.value}`)
 
               if (property.value === true) {
                 console.log('---** This RECURRING ORDER qualifies for discount **---');
@@ -364,7 +364,7 @@ app.post('/charge', async (req, res) => {
 
 
                 //UPDATE: Instead of checking the number of charges, we're checking the number of charges with discount (for SKIPPED charges)
-                switch (chargesWithDiscount) {
+                switch (chargesWithDiscount.value) {
                   case 2:
                     console.log('Discount Applied to 2 charges so far');
                     SUB_DISCOUNT_PERCENT = 30;
@@ -400,7 +400,7 @@ app.post('/charge', async (req, res) => {
                     "properties": [
                       {
                         "name": "charges with discount applied",
-                        "value": chargesWithDiscount + 1
+                        "value": chargesWithDiscount.value + 1
                       }
                     ]
                   });
