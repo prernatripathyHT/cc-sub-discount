@@ -162,6 +162,8 @@ app.post('/subscription', async (req, res) => {
           ]
         });
 
+        
+
         const requestOptions = {
           method: "PUT",
           headers: subscriptionHeaders,
@@ -253,7 +255,6 @@ app.post('/subscription', async (req, res) => {
 
 
 
-// Webhook - charge/created
 // Webhook - charge/created
 app.post('/charge', async (req, res) => {
   console.log('========= *** =========');
@@ -384,6 +385,9 @@ app.post('/charge', async (req, res) => {
                     return property;
                   });
 
+                  console.log('updatedProperties  ===> ', updatedProperties)
+
+                  // Include the updated properties in the request body
                   const discountedPrice = JSON.stringify({
                     "price": discountedSubPrice,
                     "properties": updatedProperties
@@ -394,9 +398,7 @@ app.post('/charge', async (req, res) => {
                   const discReqOptions = {
                     method: "PUT",
                     headers: discountHeaders,
-                    body: discountedPrice,
-                    redirect: "follow",
-                  };
+                    body: discountedPrice                  };
 
                   try {
                     const discountResponse = await fetch(`https://api.rechargeapps.com/subscriptions/${subscription_id}`, discReqOptions);
@@ -447,6 +449,7 @@ app.post('/charge', async (req, res) => {
     }
   }
 });
+
 
 
 
