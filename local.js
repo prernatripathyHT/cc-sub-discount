@@ -154,10 +154,6 @@ app.post('/subscription', async (req, res) => {
             {
               "name": "original subscription price",
               "value": product_price
-            },
-            {
-              "name": "charges with discount applied",
-              "value": 2
             }
           ]
         });
@@ -300,14 +296,16 @@ app.post('/charge', async (req, res) => {
       console.log(`Making a request to check the charge count for ${product_title}...`);
 
       try {
-        const chargeResponse = await fetch(`https://api.rechargeapps.com/charges/count?subscription_id=${subscription_id}`, chargeOptns);
+        const chargeResponse = await fetch(`https://api.rechargeapps.com/charges/count?subscription_id=${subscription_id}&status=SUCCESS`, chargeOptns);
         const chargeResult = await chargeResponse.json();
         const count = chargeResult.count;
-        console.log(`Charge Count for this subscription (inside charge/created webhook) for ${product_title} so far is...`, count);
+        console.log(`SUCCESS Charge Count for this subscription (inside charge/created webhook) for ${product_title} so far is...`, count);
 
-        // Only proceed if the charge count is equal to or more than 3
-        if (count >= 3) {
-          console.log(`** TAKING ACTION for this charge/created webhook for ${product_title} as the charge count is more than or equal to 3 **`);
+
+        //return;
+        // Only proceed if the active charge count is equal to or more than 2
+        if (count >= 2) {
+          console.log(`** TAKING ACTION for this charge/created webhook for ${product_title} as the active charge count is more than or equal to 2 **`);
 
           // 1. Check the properties of the subscription and see if it qualifies for a discount
           const subPropertyHeaders = new Headers();
@@ -327,12 +325,12 @@ app.post('/charge', async (req, res) => {
             console.log('allSubscriptionProperties', allSubscriptionProperties);
             const property = subscription.properties.find(prop => prop.name === 'qualifies for tiered discount');
             const originalSubPrice = subscription.properties.find(prop => prop.name === 'original subscription price');
-            const chargesWithDiscount = subscription.properties.find(prop => prop.name === 'charges with discount applied');
+            //const chargesWithDiscount = subscription.properties.find(prop => prop.name === 'charges with discount applied');
 
-            if (property && originalSubPrice && chargesWithDiscount) {
+            if (property && originalSubPrice) {
               console.log(`Property found: ${product_title} 'qualifies for tiered discount':`, property.value);
               console.log(`originalSubPrice for ${product_title} is ${originalSubPrice.value}`);
-              console.log(`Number of Charges with Discount Applied for ${product_title} so far is ${chargesWithDiscount.value}`);
+             // console.log(`Number of Charges with Discount Applied for ${product_title} so far is ${chargesWithDiscount.value}`);
 
               if (property.value === true) {
                 console.log('---** This RECURRING ORDER qualifies for discount **---');
@@ -343,24 +341,24 @@ app.post('/charge', async (req, res) => {
 
                 // Apply the subsequent discount based on the count
                 let SUB_DISCOUNT_PERCENT = '';
-                switch (chargesWithDiscount.value) {
+                switch (count) {
                   case 2:
-                    console.log('Discount Applied to 2 charges so far');
+                    console.log('2 successful charges so far');
                     SUB_DISCOUNT_PERCENT = 30;
                     break;
                   case 3:
-                    console.log('Discount Applied to 3 charges so far');
+                    console.log('3 successful charges so far');
                     SUB_DISCOUNT_PERCENT = 40;
                     break;
                   case 4:
-                    console.log('Discount Applied to 4 charges so far');
+                    console.log('4 successful charges so far');
                     SUB_DISCOUNT_PERCENT = 50;
                     break;
                   default:
                     console.log('Count is out of range');
                 }
 
-                console.log(`NO Discount to be applied for ${product_title}`);
+                //console.log(`NO Discount to be applied for ${product_title}`);
                 if (SUB_DISCOUNT_PERCENT !== '') {
                   console.log(`** PROCEEDING WITH DISCOUNT CODE APPLICATION for ${product_title}`);
 
@@ -373,29 +371,27 @@ app.post('/charge', async (req, res) => {
 
                   discountHeaders.append("Content-Type", "application/json");
 
-                  let updateDiscountCharges = chargesWithDiscount.value + 1;
+                  //let updateDiscountCharges = chargesWithDiscount.value + 1;
 
-                  // Update the properties array
-                  let updatedProperties = subscription.properties.map(property => {
-                    if (property.name === "charges with discount applied") {
-                      return {
-                        ...property,
-                        value: updateDiscountCharges
-                      };
-                    }
-                    return property;
-                  });
+                  // // Update the properties array
+                  // let updatedProperties = subscription.properties.map(property => {
+                  //   if (property.name === "charges with discount applied") {
+                  //     return {
+                  //       ...property,
+                  //       value: updateDiscountCharges
+                  //     };
+                  //   }
+                  //   return property;
+                  // });
 
-                  console.log('updatedProperties ===> ', JSON.stringify(updatedProperties, null, 2));
+                  //console.log('updatedProperties ===> ', JSON.stringify(updatedProperties, null, 2));
 
 
-                  // Include the updated properties in the request body
                   const discountedPrice = JSON.stringify({
                     "price": discountedSubPrice,
-                    "properties": updatedProperties
                   });
 
-                  console.log(`Updated Properties for ${product_title} is ${discountedPrice}`);
+                  //console.log(`Updated Properties for ${product_title} is ${discountedPrice}`);
 
                   const discReqOptions = {
                     method: "PUT",
@@ -445,7 +441,7 @@ app.post('/charge', async (req, res) => {
             }
           }
         } else {
-          console.log(`** NO ACTION for this charge/created webhook for ${product_title} as the charge count is less than 3 **`);
+          console.log(`** NO ACTION for this charge/created webhook for ${product_title} as the active charge count is less than 2 **`);
         }
       } catch (error) {
         console.error('Error fetching charge count or subscription in skip:', error);
@@ -458,220 +454,220 @@ app.post('/charge', async (req, res) => {
 
 
 
-// Webhook - subscription/skipped
-app.post('/skip', async (req, res) => {
+// // Webhook - subscription/skipped
+// app.post('/skip', async (req, res) => {
 
 
-  console.log('========= *** =========');
-  console.log('Received subscription/skipped webhook ');
-  console.log('========= *** =========');
+//   console.log('========= *** =========');
+//   console.log('Received subscription/skipped webhook ');
+//   console.log('========= *** =========');
 
-  console.log('Received sub/skipped webhook:', req.body);
+//   console.log('Received sub/skipped webhook:', req.body);
 
 
-  try {
-    // Save the payload to MongoDB
-    const savedPayload = await mongoose.connection.db.collection(`${MONGO_COLLECTION}`).insertOne(req.body);
-    console.log('Webhook payload saved:', savedPayload);
+//   try {
+//     // Save the payload to MongoDB
+//     const savedPayload = await mongoose.connection.db.collection(`${MONGO_COLLECTION}`).insertOne(req.body);
+//     console.log('Webhook payload saved:', savedPayload);
 
-    res.sendStatus(200); // Respond to the webhook request
-  } catch (err) {
-    console.error('Error saving webhook payload:', err);
-    res.sendStatus(500); // Respond with an error status
-  }
+//     res.sendStatus(200); // Respond to the webhook request
+//   } catch (err) {
+//     console.error('Error saving webhook payload:', err);
+//     res.sendStatus(500); // Respond with an error status
+//   }
 
 
 
-  //Decrease the number of discounted charges when a charge is skipped
-  let subscriptionSkippedId = req.body.subscription.id;
-  let subscriptionSkippedTitle = req.body.subscription.product_title;
-  console.log(`The subscription for ${subscriptionSkippedTitle} with ID ${subscriptionSkippedId} is skipped`);
+//   //Decrease the number of discounted charges when a charge is skipped
+//   let subscriptionSkippedId = req.body.subscription.id;
+//   let subscriptionSkippedTitle = req.body.subscription.product_title;
+//   console.log(`The subscription for ${subscriptionSkippedTitle} with ID ${subscriptionSkippedId} is skipped`);
 
 
-  //return;
+//   //return;
 
-  try{
-    // 1. Check the properties of the subscription and see if it qualifies for a discount
-    const allSubscriptionProperties = req.body.subscription.properties;
-    console.log('allSubscriptionProperties inside skipped sub: ', allSubscriptionProperties);
-    const property = req.body.subscription.properties.find(prop => prop.name === 'qualifies for tiered discount');
-    const originalSubPrice = req.body.subscription.properties.find(prop => prop.name === 'original subscription price');
-    const chargesWithDiscount = req.body.subscription.properties.find(prop => prop.name === 'charges with discount applied');
+//   try{
+//     // 1. Check the properties of the subscription and see if it qualifies for a discount
+//     const allSubscriptionProperties = req.body.subscription.properties;
+//     console.log('allSubscriptionProperties inside skipped sub: ', allSubscriptionProperties);
+//     const property = req.body.subscription.properties.find(prop => prop.name === 'qualifies for tiered discount');
+//     const originalSubPrice = req.body.subscription.properties.find(prop => prop.name === 'original subscription price');
+//     const chargesWithDiscount = req.body.subscription.properties.find(prop => prop.name === 'charges with discount applied');
 
-    if (property && originalSubPrice && chargesWithDiscount) {
+//     if (property && originalSubPrice && chargesWithDiscount) {
 
-      if (property.value === true) {
-        console.log('This skipped subscription is a part of Tiered Discount, hence proceeding with altering the number of discounted charges');
+//       if (property.value === true) {
+//         console.log('This skipped subscription is a part of Tiered Discount, hence proceeding with altering the number of discounted charges');
 
 
-        const skipChargeHeaders = new Headers();
-        skipChargeHeaders.append("X-Recharge-Access-Token", RECHARGE_API_KEY);
+//         const skipChargeHeaders = new Headers();
+//         skipChargeHeaders.append("X-Recharge-Access-Token", RECHARGE_API_KEY);
 
-        skipChargeHeaders.append("Content-Type", "application/json");
+//         skipChargeHeaders.append("Content-Type", "application/json");
 
 
-        let updateDiscountCharges = chargesWithDiscount.value - 1;
+//         let updateDiscountCharges = chargesWithDiscount.value - 1;
 
 
-        let updatedProperties = req.body.subscription.properties.map(property => {
-          if (property.name === "charges with discount applied") {
-            return {
-              ...property,
-              value: updateDiscountCharges
-            };
-          }
-          return property;
-        });
+//         let updatedProperties = req.body.subscription.properties.map(property => {
+//           if (property.name === "charges with discount applied") {
+//             return {
+//               ...property,
+//               value: updateDiscountCharges
+//             };
+//           }
+//           return property;
+//         });
 
-        console.log('updatedProperties inside skip ===> ', JSON.stringify(updatedProperties, null, 2));
+//         console.log('updatedProperties inside skip ===> ', JSON.stringify(updatedProperties, null, 2));
 
-        const skipDiscountedCharges = JSON.stringify({
-          "properties": updatedProperties
-        });
+//         const skipDiscountedCharges = JSON.stringify({
+//           "properties": updatedProperties
+//         });
 
-        console.log('updatedDiscountedCharges ===> ', skipDiscountedCharges);
+//         console.log('updatedDiscountedCharges ===> ', skipDiscountedCharges);
 
 
-        const skipDiscOptns = {
-          method: "PUT",
-          headers: skipChargeHeaders,
-          body: skipDiscountedCharges                  
-        };
+//         const skipDiscOptns = {
+//           method: "PUT",
+//           headers: skipChargeHeaders,
+//           body: skipDiscountedCharges                  
+//         };
 
 
-        try {
-          const skipChargeResponse = await fetch(`https://api.rechargeapps.com/subscriptions/${subscriptionSkippedId}`, skipDiscOptns);
-          const skipChargeResult = await skipChargeResponse.json();
-          //console.log(`After Applying the RECURRING Discount => ${discountResult}`);
+//         try {
+//           const skipChargeResponse = await fetch(`https://api.rechargeapps.com/subscriptions/${subscriptionSkippedId}`, skipDiscOptns);
+//           const skipChargeResult = await skipChargeResponse.json();
+//           //console.log(`After Applying the RECURRING Discount => ${discountResult}`);
 
-          console.log(`Successfully updates the number of discounted charges for ${subscriptionSkippedTitle} to ${updateDiscountCharges} after skipped charge`)
-        } catch (error) {
-          console.error('Error updating properties after skip:', error);
-        }
+//           console.log(`Successfully updates the number of discounted charges for ${subscriptionSkippedTitle} to ${updateDiscountCharges} after skipped charge`)
+//         } catch (error) {
+//           console.error('Error updating properties after skip:', error);
+//         }
 
-      }
+//       }
 
 
-    }
-    else{
-      console.log('This skipped subscription is not a part of Tiered Discount, hence ignoring')
-    }
+//     }
+//     else{
+//       console.log('This skipped subscription is not a part of Tiered Discount, hence ignoring')
+//     }
 
 
 
-  }
-  catch(error){
-    console.error('Error fetching charge count or subscription:', error);
-  }
+//   }
+//   catch(error){
+//     console.error('Error fetching charge count or subscription:', error);
+//   }
 
 
 
 
 
-});
+// });
 
 
 
-// Webhook - subscription/unskipped
-app.post('/unskip', async (req, res) => {
+// // Webhook - subscription/unskipped
+// app.post('/unskip', async (req, res) => {
 
 
-  console.log('========= *** =========');
-  console.log('Received subscription/unskipped webhook ');
-  console.log('========= *** =========');
+//   console.log('========= *** =========');
+//   console.log('Received subscription/unskipped webhook ');
+//   console.log('========= *** =========');
 
-  console.log('Received sub/unskipped webhook:', req.body);
+//   console.log('Received sub/unskipped webhook:', req.body);
 
 
-  try {
-    // Save the payload to MongoDB
-    const savedPayload = await mongoose.connection.db.collection(`${MONGO_COLLECTION}`).insertOne(req.body);
-    console.log('Webhook payload saved:', savedPayload);
+//   try {
+//     // Save the payload to MongoDB
+//     const savedPayload = await mongoose.connection.db.collection(`${MONGO_COLLECTION}`).insertOne(req.body);
+//     console.log('Webhook payload saved:', savedPayload);
 
-    res.sendStatus(200); // Respond to the webhook request
-  } catch (err) {
-    console.error('Error saving webhook payload:', err);
-    res.sendStatus(500); // Respond with an error status
-  }
+//     res.sendStatus(200); // Respond to the webhook request
+//   } catch (err) {
+//     console.error('Error saving webhook payload:', err);
+//     res.sendStatus(500); // Respond with an error status
+//   }
 
 
-  //Increase the number of discounted charges when a charge is unskipped
-  let subscriptionUnSkippedId = req.body.subscription.id;
-  let subscriptionUnSkippedTitle = req.body.subscription.product_title;
-  console.log(`The subscription for ${subscriptionUnSkippedTitle} with ID ${subscriptionUnSkippedId} is unskipped`);
+//   //Increase the number of discounted charges when a charge is unskipped
+//   let subscriptionUnSkippedId = req.body.subscription.id;
+//   let subscriptionUnSkippedTitle = req.body.subscription.product_title;
+//   console.log(`The subscription for ${subscriptionUnSkippedTitle} with ID ${subscriptionUnSkippedId} is unskipped`);
 
-  try{
-    // 1. Check the properties of the subscription and see if it qualifies for a discount
-    const allSubscriptionProperties = req.body.subscription.properties;
-    console.log('allSubscriptionProperties inside skipped sub: ', allSubscriptionProperties);
-    const property = req.body.subscription.properties.find(prop => prop.name === 'qualifies for tiered discount');
-    const originalSubPrice = req.body.subscription.properties.find(prop => prop.name === 'original subscription price');
-    const chargesWithDiscount = req.body.subscription.properties.find(prop => prop.name === 'charges with discount applied');
+//   try{
+//     // 1. Check the properties of the subscription and see if it qualifies for a discount
+//     const allSubscriptionProperties = req.body.subscription.properties;
+//     console.log('allSubscriptionProperties inside skipped sub: ', allSubscriptionProperties);
+//     const property = req.body.subscription.properties.find(prop => prop.name === 'qualifies for tiered discount');
+//     const originalSubPrice = req.body.subscription.properties.find(prop => prop.name === 'original subscription price');
+//     const chargesWithDiscount = req.body.subscription.properties.find(prop => prop.name === 'charges with discount applied');
 
-    if (property && originalSubPrice && chargesWithDiscount) {
-      if (property.value === true) {
-        console.log('This unskipped subscription is a part of Tiered Discount, hence proceeding with altering the number of discounted charges');
+//     if (property && originalSubPrice && chargesWithDiscount) {
+//       if (property.value === true) {
+//         console.log('This unskipped subscription is a part of Tiered Discount, hence proceeding with altering the number of discounted charges');
 
 
-        const unskipChargeHeaders = new Headers();
-        unskipChargeHeaders.append("X-Recharge-Access-Token", RECHARGE_API_KEY);
+//         const unskipChargeHeaders = new Headers();
+//         unskipChargeHeaders.append("X-Recharge-Access-Token", RECHARGE_API_KEY);
 
-        unskipChargeHeaders.append("Content-Type", "application/json");
+//         unskipChargeHeaders.append("Content-Type", "application/json");
 
 
-        let updateDiscountCharges = chargesWithDiscount.value + 1;
-        let updatedProperties = req.body.subscription.properties.map(property => {
-          if (property.name === "charges with discount applied") {
-            return {
-              ...property,
-              value: updateDiscountCharges
-            };
-          }
-          return property;
-        });
+//         let updateDiscountCharges = chargesWithDiscount.value + 1;
+//         let updatedProperties = req.body.subscription.properties.map(property => {
+//           if (property.name === "charges with discount applied") {
+//             return {
+//               ...property,
+//               value: updateDiscountCharges
+//             };
+//           }
+//           return property;
+//         });
 
 
-        console.log('updatedProperties inside unskip ===> ', JSON.stringify(updatedProperties, null, 2));
+//         console.log('updatedProperties inside unskip ===> ', JSON.stringify(updatedProperties, null, 2));
 
 
-        const unskipDiscountedCharges = JSON.stringify({
-          "properties": updatedProperties
-        });
+//         const unskipDiscountedCharges = JSON.stringify({
+//           "properties": updatedProperties
+//         });
 
-        console.log('unskipDiscountedCharges ===> ', unskipDiscountedCharges);
+//         console.log('unskipDiscountedCharges ===> ', unskipDiscountedCharges);
 
 
-        const unskipDiscOptns = {
-          method: "PUT",
-          headers: unskipChargeHeaders,
-          body: unskipDiscountedCharges                  
-        };
+//         const unskipDiscOptns = {
+//           method: "PUT",
+//           headers: unskipChargeHeaders,
+//           body: unskipDiscountedCharges                  
+//         };
 
 
-        try {
-          const unskipChargeResponse = await fetch(`https://api.rechargeapps.com/subscriptions/${subscriptionUnSkippedId}`, unskipDiscOptns);
-          const unskipChargeResult = await unskipChargeResponse.json();
-          //console.log(`After Applying the RECURRING Discount => ${discountResult}`);
+//         try {
+//           const unskipChargeResponse = await fetch(`https://api.rechargeapps.com/subscriptions/${subscriptionUnSkippedId}`, unskipDiscOptns);
+//           const unskipChargeResult = await unskipChargeResponse.json();
+//           //console.log(`After Applying the RECURRING Discount => ${discountResult}`);
 
-          console.log(`Successfully updates the number of discounted charges for ${subscriptionUnSkippedTitle} to ${updateDiscountCharges} after unskipped charge`)
-        } catch (error) {
-          console.error('Error updating properties after skip:', error);
-        }
+//           console.log(`Successfully updates the number of discounted charges for ${subscriptionUnSkippedTitle} to ${updateDiscountCharges} after unskipped charge`)
+//         } catch (error) {
+//           console.error('Error updating properties after skip:', error);
+//         }
 
 
 
 
-      }
-    }
-    else{
-      console.log('This unskipped subscription is not a part of Tiered Discount, hence ignoring')
-    }
+//       }
+//     }
+//     else{
+//       console.log('This unskipped subscription is not a part of Tiered Discount, hence ignoring')
+//     }
 
 
-  }
-  catch(error){
-    console.error('Error fetching charge count or subscription in unskip:', error);
-  }
+//   }
+//   catch(error){
+//     console.error('Error fetching charge count or subscription in unskip:', error);
+//   }
 
 
 
@@ -680,7 +676,7 @@ app.post('/unskip', async (req, res) => {
 
 
 
-});
+// });
 
 
 
