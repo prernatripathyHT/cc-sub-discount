@@ -650,7 +650,7 @@ app.post('/unskip', async (req, res) => {
 
         try {
           const unskipChargeResponse = await fetch(`https://api.rechargeapps.com/subscriptions/${subscriptionUnSkippedId}`, unskipDiscOptns);
-          const unskipChargeResult = await skipChargeResponse.json();
+          const unskipChargeResult = await unskipChargeResponse.json();
           //console.log(`After Applying the RECURRING Discount => ${discountResult}`);
 
           console.log(`Successfully updates the number of discounted charges for ${subscriptionUnSkippedTitle} to ${updateDiscountCharges} after unskipped charge`)
@@ -677,6 +677,32 @@ app.post('/unskip', async (req, res) => {
 
 
 
+
+
+
+});
+
+
+
+
+app.post('/swap', async (req, res) => {
+  console.log('========= *** =========');
+  console.log('Received subscription/swapped webhook ');
+  console.log('========= *** =========');
+
+  console.log('Received sub/swapped webhook:', req.body);
+
+
+  try {
+    // Save the payload to MongoDB
+    const savedPayload = await mongoose.connection.db.collection(`${MONGO_COLLECTION}`).insertOne(req.body);
+    console.log('Webhook payload saved:', savedPayload);
+
+    res.sendStatus(200); // Respond to the webhook request
+  } catch (err) {
+    console.error('Error saving webhook payload:', err);
+    res.sendStatus(500); // Respond with an error status
+  }
 
 
 
