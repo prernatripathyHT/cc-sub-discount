@@ -277,6 +277,7 @@ app.post('/charge', async (req, res) => {
     console.log('----- This charge is of type RECURRING (charge/created) -----');
 
     let charge_id = req.body.charge.id;
+    console.log(`Charge ID for the charge/created webhook ===> ${charge_id}`)
 
     for (const [index, line_item] of req.body.charge.line_items.entries()) {
       console.log(`Subscription ID for ${index} ===> ${line_item.subscription_id}`);
@@ -406,7 +407,7 @@ app.post('/charge', async (req, res) => {
                     const discountResponse = await fetch(`https://api.rechargeapps.com/subscriptions/${subscription_id}`, discReqOptions);
                     const discountResult = await discountResponse.json();
                     console.log(`After Applying the RECURRING Discount => ${discountResult}`)
-                    console.log(`Applied ${SUB_DISCOUNT_PERCENT}% discount to ${product_title} for the charge number ${count}. Updated price is now ===> ${discountedPrice}`);
+                    console.log(`Applied ${SUB_DISCOUNT_PERCENT}% discount to ${product_title} for the charge number ${count} with charge ID ${charge_id}. Updated price is now ===> ${discountedPrice}`);
                   } catch (error) {
                     console.error('Error applying discount:', error);
                   }
@@ -592,6 +593,10 @@ app.post('/unskip', async (req, res) => {
     console.error('Error saving webhook payload:', err);
     res.sendStatus(500); // Respond with an error status
   }
+
+
+  const allSubscriptionProperties = req.body.subscription.properties;
+  console.log('allSubscriptionProperties inside unskipped sub: ', allSubscriptionProperties);
 
 });
 
