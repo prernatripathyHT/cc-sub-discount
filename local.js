@@ -7,7 +7,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 const RECHARGE_API_KEY = 'sk_test_2x2_b69d7aa3fe6f2600f0375946b77f8eb00dd2bf034133a9bd9702efd3bb2b3400'
-// const MONGO_COLLECTION = 'sub_payloads_3'
+// const MONGO_COLLECTION = 'sub_payloads_4'
 const MONGO_COLLECTION = 'webhooks'
 
 // MongoDB connection setup
@@ -359,7 +359,7 @@ app.post('/charge', async (req, res) => {
                     console.log('Count is out of range');
                 }
 
-                console.log(`Discount percentage to be applied for ${product_title} is ${SUB_DISCOUNT_PERCENT}`);
+                console.log(`NO Discount to be applied for ${product_title}`);
                 if (SUB_DISCOUNT_PERCENT !== '') {
                   console.log(`** PROCEEDING WITH DISCOUNT CODE APPLICATION for ${product_title}`);
 
@@ -478,6 +478,94 @@ app.post('/skip', async (req, res) => {
     console.error('Error saving webhook payload:', err);
     res.sendStatus(500); // Respond with an error status
   }
+
+
+
+  //Decrease the number of discounted charges when a charge is skipped
+  let subscriptionSkippedId = req.body.subscription.id;
+  let subscriptionSkippedTitle = req.body.subscription.product_title;
+  console.log(`The subscription for ${subscriptionSkippedTitle} with ID ${subscriptionSkippedId} is skipped`);
+
+
+  //return;
+
+  try{
+    // 1. Check the properties of the subscription and see if it qualifies for a discount
+    const allSubscriptionProperties = req.body.subscription.properties;
+    console.log('allSubscriptionProperties inside skipped sub: ', allSubscriptionProperties);
+    const property = req.body.subscription.properties.find(prop => prop.name === 'qualifies for tiered discount');
+    const originalSubPrice = req.body.subscription.properties.find(prop => prop.name === 'original subscription price');
+    const chargesWithDiscount = req.body.subscription.properties.find(prop => prop.name === 'charges with discount applied');
+
+    if (property && originalSubPrice && chargesWithDiscount) {
+
+      if (property.value === true) {
+        console.log('This skipped subscription is a part of Tiered Discount, hence proceeding with altering the number of discounted charges');
+
+
+        const skipChargeHeaders = new Headers();
+        skipChargeHeaders.append("X-Recharge-Access-Token", RECHARGE_API_KEY);
+
+        skipChargeHeaders.append("Content-Type", "application/json");
+
+
+        let updateDiscountCharges = chargesWithDiscount.value - 1;
+
+
+        let updatedProperties = req.body.subscription.properties.map(property => {
+          if (property.name === "charges with discount applied") {
+            return {
+              ...property,
+              value: updateDiscountCharges
+            };
+          }
+          return property;
+        });
+
+        console.log('updatedProperties inside skip ===> ', JSON.stringify(updatedProperties, null, 2));
+
+        const skipDiscountedCharges = JSON.stringify({
+          "properties": updatedProperties
+        });
+
+        console.log('updatedDiscountedCharges ===> ', skipDiscountedCharges);
+
+
+        const skipDiscOptns = {
+          method: "PUT",
+          headers: skipChargeHeaders,
+          body: skipDiscountedCharges                  
+        };
+
+
+        try {
+          const skipChargeResponse = await fetch(`https://api.rechargeapps.com/subscriptions/${subscriptionSkippedId}`, skipDiscOptns);
+          const skipChargeResult = await skipChargeResponse.json();
+          //console.log(`After Applying the RECURRING Discount => ${discountResult}`);
+
+          console.log(`Successfully updates the number of discounted charges for ${subscriptionSkippedTitle} to ${updateDiscountCharges} after skipped charge`)
+        } catch (error) {
+          console.error('Error updating properties after skip:', error);
+        }
+
+      }
+
+
+    }
+    else{
+      console.log('This skipped subscription is not a part of Tiered Discount, hence ignoring')
+    }
+
+
+
+  }
+  catch(error){
+    console.error('Error fetching charge count or subscription:', error);
+  }
+
+
+
+
 
 });
 
