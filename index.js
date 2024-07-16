@@ -448,7 +448,7 @@ app.post('/charge', async (req, res) => {
           console.log(`** NO ACTION for this charge/created webhook for ${product_title} as the charge count is less than 3 **`);
         }
       } catch (error) {
-        console.error('Error fetching charge count or subscription:', error);
+        console.error('Error fetching charge count or subscription in skip:', error);
       }
     }
   }
@@ -595,8 +595,90 @@ app.post('/unskip', async (req, res) => {
   }
 
 
-  const allSubscriptionProperties = req.body.subscription.properties;
-  console.log('allSubscriptionProperties inside unskipped sub: ', allSubscriptionProperties);
+  //Increase the number of discounted charges when a charge is unskipped
+  let subscriptionUnSkippedId = req.body.subscription.id;
+  let subscriptionUnSkippedTitle = req.body.subscription.product_title;
+  console.log(`The subscription for ${subscriptionUnSkippedTitle} with ID ${subscriptionUnSkippedId} is unskipped`);
+
+  try{
+    // 1. Check the properties of the subscription and see if it qualifies for a discount
+    const allSubscriptionProperties = req.body.subscription.properties;
+    console.log('allSubscriptionProperties inside skipped sub: ', allSubscriptionProperties);
+    const property = req.body.subscription.properties.find(prop => prop.name === 'qualifies for tiered discount');
+    const originalSubPrice = req.body.subscription.properties.find(prop => prop.name === 'original subscription price');
+    const chargesWithDiscount = req.body.subscription.properties.find(prop => prop.name === 'charges with discount applied');
+
+    if (property && originalSubPrice && chargesWithDiscount) {
+      if (property.value === true) {
+        console.log('This unskipped subscription is a part of Tiered Discount, hence proceeding with altering the number of discounted charges');
+
+
+        const unskipChargeHeaders = new Headers();
+        unskipChargeHeaders.append("X-Recharge-Access-Token", RECHARGE_API_KEY);
+
+        unskipChargeHeaders.append("Content-Type", "application/json");
+
+
+        let updateDiscountCharges = chargesWithDiscount.value + 1;
+        let updatedProperties = req.body.subscription.properties.map(property => {
+          if (property.name === "charges with discount applied") {
+            return {
+              ...property,
+              value: updateDiscountCharges
+            };
+          }
+          return property;
+        });
+
+
+        console.log('updatedProperties inside unskip ===> ', JSON.stringify(updatedProperties, null, 2));
+
+
+        const unskipDiscountedCharges = JSON.stringify({
+          "properties": updatedProperties
+        });
+
+        console.log('unskipDiscountedCharges ===> ', unskipDiscountedCharges);
+
+
+        const unskipDiscOptns = {
+          method: "PUT",
+          headers: unskipChargeHeaders,
+          body: unskipDiscountedCharges                  
+        };
+
+
+        try {
+          const unskipChargeResponse = await fetch(`https://api.rechargeapps.com/subscriptions/${subscriptionUnSkippedId}`, unskipDiscOptns);
+          const unskipChargeResult = await skipChargeResponse.json();
+          //console.log(`After Applying the RECURRING Discount => ${discountResult}`);
+
+          console.log(`Successfully updates the number of discounted charges for ${subscriptionUnSkippedTitle} to ${updateDiscountCharges} after unskipped charge`)
+        } catch (error) {
+          console.error('Error updating properties after skip:', error);
+        }
+
+
+
+
+      }
+    }
+    else{
+      console.log('This unskipped subscription is not a part of Tiered Discount, hence ignoring')
+    }
+
+
+  }
+  catch(error){
+    console.error('Error fetching charge count or subscription in unskip:', error);
+  }
+
+
+
+
+
+
+
 
 });
 
