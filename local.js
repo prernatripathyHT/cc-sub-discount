@@ -304,7 +304,41 @@ app.post('/charge', async (req, res) => {
         console.log(`SUCCESS Charge Count for this subscription (inside charge/created webhook) for ${product_title} so far is...`, count);
 
 
+        
+
         //return;
+
+        // if (count == 1) {
+        //   console.log(`This will be called while placing the first subscription order or if the first recurring order is skipped...`)
+        //   console.log(`Handling the case for ${product_title} where first recurring order is skipped`);
+
+        //   // 1. Check the properties of the subscription and see if it qualifies for a discount
+        //   const subPropertyHeaders = new Headers();
+        //   subPropertyHeaders.append("X-Recharge-Access-Token", RECHARGE_API_KEY);
+
+        //   const requestOptions = {
+        //     method: "GET",
+        //     headers: subPropertyHeaders,
+        //   };
+
+        //   const subResponse = await fetch(`https://api.rechargeapps.com/subscriptions/${subscription_id}`, requestOptions);
+        //   const subResult = await subResponse.json();
+        //   const subscription = subResult.subscription;
+
+        //   if (subscription) {
+        //     const allSubscriptionProperties = subscription.properties;
+        //     console.log('allSubscriptionProperties', allSubscriptionProperties);
+        //     const property = subscription.properties.find(prop => prop.name === 'qualifies for tiered discount');
+        //     const originalSubPrice = subscription.properties.find(prop => prop.name === 'original subscription price');
+            
+
+        //     if (property && originalSubPrice) {
+
+        //     }
+        //   }
+        // }
+
+
         // Only proceed if the active charge count is equal to or more than 2
         if (count >= 2) {
           console.log(`** TAKING ACTION for this charge/created webhook for ${product_title} as the active charge count is more than or equal to 2 **`);
@@ -373,22 +407,7 @@ app.post('/charge', async (req, res) => {
 
                   discountHeaders.append("Content-Type", "application/json");
 
-                  //let updateDiscountCharges = chargesWithDiscount.value + 1;
-
-                  // // Update the properties array
-                  // let updatedProperties = subscription.properties.map(property => {
-                  //   if (property.name === "charges with discount applied") {
-                  //     return {
-                  //       ...property,
-                  //       value: updateDiscountCharges
-                  //     };
-                  //   }
-                  //   return property;
-                  // });
-
-                  //console.log('updatedProperties ===> ', JSON.stringify(updatedProperties, null, 2));
-
-
+                  
                   const discountedPrice = JSON.stringify({
                     "price": discountedSubPrice,
                   });
@@ -488,7 +507,7 @@ app.post('/swap', async (req, res) => {
     const property = req.body.subscription.properties.find(prop => prop.name === 'qualifies for tiered discount');
 
 
-    if(property){
+    if(property.value == true){
       console.log(`This swapped charge is a part of tiered discount..setting the property value to false...`);
 
       const swapChargeHeaders = new Headers();
@@ -532,6 +551,9 @@ app.post('/swap', async (req, res) => {
 
 
 
+    }
+    else{
+      console.log(`This skipped charge is not a part of tiered discount.. hence skipping`)
     }
   }
   catch(error){
