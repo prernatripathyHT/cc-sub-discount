@@ -343,7 +343,7 @@ app.post('/charge', async (req, res) => {
                 console.log('---** This RECURRING ORDER qualifies for discount -- after first charge skipped **---');
 
                 //Apply 20% discount to the second charge
-                let discounted20Price = product_price * 0.8;
+                let discounted20Price = originalSubPrice * 0.8;
 
                 const fcSkipDiscountHeader = new Headers();
                 fcSkipDiscountHeader.append("X-Recharge-Access-Token", RECHARGE_API_KEY);
