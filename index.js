@@ -545,7 +545,7 @@ app.post('/skip', async (req, res) => {
 
 
     //Check which number of charge is skipped --- 
-    const chargeResponse = await fetch(`https://api.rechargeapps.com/charges/count?subscription_id=${subscription_id}&status=SUCCESS`, chargeOptns);
+    const chargeResponse = await fetch(`https://api.rechargeapps.com/charges/count?subscription_id=${subscriptionSkippedId}&status=SUCCESS`, chargeOptns);
     const chargeResult = await chargeResponse.json();
     const count = chargeResult.count;
     console.log(`SUCCESS Charge Count for this subscription (inside charge/skipped webhook) for ${product_title} so far is...`, count);
