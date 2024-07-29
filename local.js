@@ -308,39 +308,39 @@ app.post('/charge', async (req, res) => {
 
         //return;
 
-        // if (count == 1) {
-        //   console.log(`This will be called while placing the first subscription order or if the first recurring order is skipped...`)
-        //   console.log(`Handling the case for ${product_title} where first recurring order is skipped`);
+        if (count == 1) {
+          console.log(`This will be called while placing the first subscription order OR if the first recurring order is skipped...`)
+          console.log(`Handling the case for ${product_title} where first recurring order is skipped`);
 
-        //   // 1. Check the properties of the subscription and see if it qualifies for a discount
-        //   const subPropertyHeaders = new Headers();
-        //   subPropertyHeaders.append("X-Recharge-Access-Token", RECHARGE_API_KEY);
+          // 1. Check the properties of the subscription and see if it qualifies for a discount
+          const subPropertyHeaders = new Headers();
+          subPropertyHeaders.append("X-Recharge-Access-Token", RECHARGE_API_KEY);
 
-        //   const requestOptions = {
-        //     method: "GET",
-        //     headers: subPropertyHeaders,
-        //   };
+          const requestOptions = {
+            method: "GET",
+            headers: subPropertyHeaders,
+          };
 
-        //   const subResponse = await fetch(`https://api.rechargeapps.com/subscriptions/${subscription_id}`, requestOptions);
-        //   const subResult = await subResponse.json();
-        //   const subscription = subResult.subscription;
+          const subResponse = await fetch(`https://api.rechargeapps.com/subscriptions/${subscription_id}`, requestOptions);
+          const subResult = await subResponse.json();
+          const subscription = subResult.subscription;
 
-        //   if (subscription) {
-        //     const allSubscriptionProperties = subscription.properties;
-        //     console.log('allSubscriptionProperties', allSubscriptionProperties);
-        //     const property = subscription.properties.find(prop => prop.name === 'qualifies for tiered discount');
-        //     const originalSubPrice = subscription.properties.find(prop => prop.name === 'original subscription price');
+          if (subscription) {
+            const allSubscriptionProperties = subscription.properties;
+            console.log('allSubscriptionProperties', allSubscriptionProperties);
+            const property = subscription.properties.find(prop => prop.name === 'qualifies for tiered discount');
+            const originalSubPrice = subscription.properties.find(prop => prop.name === 'original subscription price');
             
 
-        //     if (property && originalSubPrice) {
+            if (property && originalSubPrice) {
 
-        //     }
-        //   }
-        // }
+            }
+          }
+        }
 
 
         // Only proceed if the active charge count is equal to or more than 2
-        if (count >= 2) {
+        else if (count >= 2) {
           console.log(`** TAKING ACTION for this charge/created webhook for ${product_title} as the active charge count is more than or equal to 2 **`);
 
           // 1. Check the properties of the subscription and see if it qualifies for a discount
