@@ -229,7 +229,7 @@ app.post('/subscription', async (req, res) => {
         try {
           const response = await fetch(`https://api.rechargeapps.com/subscriptions/${subscription_id}`, discReqOptions);
           const result = await response.json();
-          console.log(`Result after applying the first recurring discount: ${result.price}`)
+          console.log(`Result after applying the first recurring discount with updated price: ${result.subscription.price}`)
           console.log(`Applied 20% disocunt to ${product_title} for the charge number ${count} . Updated price is now ===> ${discountedPrice}`);
         } catch (error) {
           console.error(error);
@@ -423,7 +423,7 @@ app.post('/charge', async (req, res) => {
                   try {
                     const discountResponse = await fetch(`https://api.rechargeapps.com/subscriptions/${subscription_id}`, discReqOptions);
                     const discountResult = await discountResponse.json();
-                    console.log(`After Applying the RECURRING Discount => ${discountResult}`)
+                    console.log(`After Applying the RECURRING Discount => ${discountResult.subscription}`)
                     console.log(`Applied ${SUB_DISCOUNT_PERCENT}% discount to ${product_title} for the charge number ${count} with charge ID ${charge_id}. Updated price is now ===> ${discountedPrice}`);
                   } catch (error) {
                     console.error('Error applying discount:', error);
