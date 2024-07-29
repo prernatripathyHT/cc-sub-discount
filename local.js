@@ -304,89 +304,8 @@ app.post('/charge', async (req, res) => {
         console.log(`SUCCESS Charge Count for this subscription (inside charge/created webhook) for ${product_title} so far is...`, count);
 
 
-        
-
-        //return;
-
-        if (count == 1) {
-          console.log(`This will be called while placing the first subscription order OR if the first recurring order is skipped...`)
-          console.log(`Handling the case for ${product_title} where first recurring order is skipped`);
-
-          // 1. Check the properties of the subscription and see if it qualifies for a discount
-          const subPropertyHeaders = new Headers();
-          subPropertyHeaders.append("X-Recharge-Access-Token", RECHARGE_API_KEY);
-
-          const requestOptions = {
-            method: "GET",
-            headers: subPropertyHeaders,
-          };
-
-          const subResponse = await fetch(`https://api.rechargeapps.com/subscriptions/${subscription_id}`, requestOptions);
-          const subResult = await subResponse.json();
-          const subscription = subResult.subscription;
-
-          if (subscription) {
-            const allSubscriptionProperties = subscription.properties;
-            console.log('allSubscriptionProperties', allSubscriptionProperties);
-            const property = subscription.properties.find(prop => prop.name === 'qualifies for tiered discount');
-            const originalSubPrice = subscription.properties.find(prop => prop.name === 'original subscription price');
-
-
-
-            //const firstChargeSkipped = true;
-            //TODO: need to add another check to see if it's after the first charge SKIP
-            if (property && originalSubPrice) {
-              console.log(`Property found: ${product_title} 'qualifies for tiered discount':`, property.value);
-              console.log(`originalSubPrice for ${product_title} is ${originalSubPrice.value}`);
-
-              if (property.value === true) {
-                console.log('---** This RECURRING ORDER qualifies for discount -- after first charge skipped **---');
-
-                //Apply 20% discount to the second charge
-                let discounted20Price = originalSubPrice.value * 0.8;
-
-                const fcSkipDiscountHeader = new Headers();
-                fcSkipDiscountHeader.append("X-Recharge-Access-Token", RECHARGE_API_KEY);
-                // fcSkipDiscountHeader.append("X-Recharge-Version", "2021-11");
-                fcSkipDiscountHeader.append("Content-Type", "application/json");
-
-                const discountedPrice = JSON.stringify({
-                  "price": discounted20Price
-                });
-
-                const fcSkipDiscReqOptions = {
-                  method: "PUT",
-                  headers: fcSkipDiscountHeader,
-                  body: discountedPrice,
-                  redirect: "follow"
-                };
-
-                try {
-                  const response = await fetch(`https://api.rechargeapps.com/subscriptions/${subscription_id}`, fcSkipDiscReqOptions);
-                  const result = await response.json();
-                  console.log(`Result after applying the first recurring discount with updated price (after the first charge is skipped): ${result.subscription.price}`)
-                  console.log(`Applied 20% disocunt to ${product_title} for the charge number ${count} . Updated price is now ===> ${discountedPrice}`);
-                } catch (error) {
-                  console.error(error);
-                }
-
-
-
-
-
-
-              }
-
-            }
-            else {
-              console.log(`Properties not found: 'qualifies for tiered discount' or 'original subscription price' or 'charges with discount applied'`);
-            }
-          }
-        }
-
-
         // Only proceed if the active charge count is equal to or more than 2
-        else if (count >= 2) {
+        if (count >= 2) {
           console.log(`** TAKING ACTION for this charge/created webhook for ${product_title} as the active charge count is more than or equal to 2 **`);
 
           // 1. Check the properties of the subscription and see if it qualifies for a discount
@@ -518,57 +437,6 @@ app.post('/charge', async (req, res) => {
 });
 
 
-
-
-
-
-// Webhook - subscription/skipped
-app.post('/skip', async (req, res) => {
-
-
-  console.log('========= *** =========');
-  console.log('Received subscription/skipped webhook ');
-  console.log('========= *** =========');
-
-  console.log('Received sub/skipped webhook:', req.body);
-
-  let subscriptionSkippedId = req.body.subscription.id;
-  let subscriptionSkippedTitle = req.body.subscription.product_title;
-  console.log(`The subscription for ${subscriptionSkippedTitle} with ID ${subscriptionSkippedId} is skipped`);
-
-
-  try{
-    const allSubscriptionProperties = req.body.subscription.properties;
-    console.log('allSubscriptionProperties inside skipped sub: ', allSubscriptionProperties);
-    const property = req.body.subscription.properties.find(prop => prop.name === 'qualifies for tiered discount');
-    const originalSubPrice = req.body.subscription.properties.find(prop => prop.name === 'original subscription price');
-
-
-    //Check which number of charge is skipped --- 
-    const chargeResponse = await fetch(`https://api.rechargeapps.com/charges/count?subscription_id=${subscription_id}&status=SUCCESS`, chargeOptns);
-    const chargeResult = await chargeResponse.json();
-    const count = chargeResult.count;
-    console.log(`SUCCESS Charge Count for this subscription (inside charge/skipped webhook) for ${product_title} so far is...`, count);
-
-
-      return;
-
-
-    if (property && originalSubPrice) {
-
-
-    }
-    else{
-      console.log('This skipped subscription is not a part of Tiered Discount, hence ignoring')
-    }
-  }
-  catch(error){
-    console.error('Error fetching charge count or subscription:', error);
-  }
-
-
-  
-});
 
 
 
